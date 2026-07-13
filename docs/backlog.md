@@ -4,16 +4,16 @@ Agile artifact for R5. Epics mirror the milestones in `docs/DESIGN.md`
 Section 15; stories are the concrete increments inside each. Status values:
 `todo`, `in progress`, `done`.
 
-## Epic M0 — Scaffolding *(in progress)*
+## Epic M0 — Scaffolding *(done — 2026-07-13)*
 
 | Story | Status |
 |---|---|
-| Monorepo directory structure (Section 6) | in progress |
-| Stub services boot with `/health` (bff, ingestion, agent, retrieval, frontend) | in progress |
-| docker-compose starts every container (5 services + Postgres, Mongo, Redis, OpenSearch, Neo4j, Ollama) | in progress |
-| Makefile with top-level dev commands | todo |
+| Monorepo directory structure (Section 6) | done |
+| Stub services boot with `/health` (bff, ingestion, agent, retrieval, frontend) | done |
+| docker-compose starts every container (5 services + Postgres, Mongo, Redis, OpenSearch, Neo4j, Ollama) | done — all 11 healthy, all `/health` 200 |
+| Makefile with top-level dev commands | done |
 | ADR-0001 recorded | done |
-| CI pipeline green: lint + trivial test per service | todo |
+| CI pipeline green: lint + trivial test per service | done — run 29271688484 |
 
 ## Epic M1 — Walking skeleton *(todo)*
 
