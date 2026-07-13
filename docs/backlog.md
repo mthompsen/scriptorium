@@ -15,10 +15,16 @@ Section 15; stories are the concrete increments inside each. Status values:
 | ADR-0001 recorded | done |
 | CI pipeline green: lint + trivial test per service | done — run 29271688484 |
 
-## Epic M1 — Walking skeleton *(todo)*
+## Epic M1 — Walking skeleton *(done — 2026-07-13)*
 
-JWT auth in BFF · Postgres schema + migrations · document upload creating a
-`documents` row · stub chat endpoint · minimal Next.js login + chat pages.
+| Story | Status |
+|---|---|
+| Postgres schema + Alembic migrations (identity, documents, chat) + demo seed (ADR-0002) | done |
+| JWT auth in BFF: login, HttpOnly cookie + bearer, tenant context (ADR-0003) | done |
+| Document upload → `documents` row → raw bytes stored via ingestion `/ingest` | done |
+| Stub chat endpoint (echo) with persisted sessions/messages | done |
+| Next.js login, chat, and library pages (Tailwind) | done |
+| End-to-end verified: login → upload → message on compose stack (`scripts/e2e-smoke.ps1`) | done |
 
 ## Epic M2 — RAG core *(todo)*
 

@@ -15,6 +15,12 @@ docker compose -f infra/docker/docker-compose.yml ps
 On hosts with `make`, `make up` / `make down` wrap the same commands. On
 native Windows, invoke `docker compose` directly as above.
 
+Demo login (dev-only, seeded by migration 0004): `demo@scriptorium.local` /
+`scriptorium-demo` at http://localhost:3000/login.
+
+An end-to-end API smoke test lives at `scripts/e2e-smoke.ps1`
+(login → upload → status → chat → authz check).
+
 Service endpoints once up:
 
 | Service | URL |

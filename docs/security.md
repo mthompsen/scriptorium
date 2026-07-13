@@ -3,6 +3,21 @@
 Scope and intent are defined in `docs/DESIGN.md` Section 12. This document
 grows with the system; the full threat model and DevSecOps pipeline land in M5.
 
+## Controls in place (M1)
+
+- AuthN: JWT issued by the BFF (30-min expiry), bcrypt password hashes.
+  Browser flow uses an HttpOnly SameSite=Lax cookie; API clients use
+  `Authorization: Bearer` (ADR-0003). Login returns the same error for
+  unknown user and wrong password (no account enumeration).
+- AuthZ/tenancy: tenant scope derived server-side from the JWT via a
+  request-scoped `TenantContext`; every SQL query filters by `tenant_id`;
+  chat sessions additionally scoped to the owning user.
+- Input validation: DTO validation (class-validator, whitelist +
+  forbidNonWhitelisted) in the BFF; UUID/form validation in ingestion.
+- Parameterized queries only (node-postgres and psycopg placeholders).
+- Upload limits: 20 MB request cap; MIME allowlist (PDF, DOCX, MD, HTML, txt).
+- CORS restricted to the frontend origin with credentials.
+
 ## Controls in place (M0)
 
 - Secrets: no secrets in code; local config via environment with committed
