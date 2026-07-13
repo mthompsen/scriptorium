@@ -6,6 +6,14 @@ $bffBase = 'http://localhost:3001/api/v1'
 $agentBase = 'http://localhost:8002'
 $evalDir = Join-Path $PSScriptRoot '..\services\agent\eval'
 
+$tenantId = '11111111-1111-4111-8111-111111111111'
+
+Write-Host "0) reset eval corpus (local-only maintenance: metrics require a known corpus state)"
+docker exec scriptorium-postgres-1 psql -U scriptorium -q -c "DELETE FROM documents WHERE tenant_id = '$tenantId';" | Out-Null
+docker exec scriptorium-mongodb-1 mongosh --quiet --eval "const db2 = db.getSiblingDB('scriptorium'); db2.chunks.deleteMany({tenant_id: '$tenantId'}); db2.raw_documents.deleteMany({tenant_id: '$tenantId'});" | Out-Null
+& curl.exe -s -X DELETE "http://localhost:9200/chunks-$tenantId" | Out-Null
+Write-Host "   corpus cleared"
+
 Write-Host "1) login"
 Invoke-RestMethod -Uri "$bffBase/auth/login" -Method Post -ContentType 'application/json' `
   -Body (@{ email = 'demo@scriptorium.local'; password = 'scriptorium-demo' } | ConvertTo-Json) `
@@ -37,7 +45,7 @@ $queries = @($dataset.queries | ForEach-Object {
   @{ query = $_.query; expected_document_id = $docIds[$_.expected_file] }
 })
 $body = @{
-  tenant_id         = '11111111-1111-4111-8111-111111111111'
+  tenant_id         = $tenantId
   k                 = $dataset.k
   queries           = $queries
   generation        = $true
