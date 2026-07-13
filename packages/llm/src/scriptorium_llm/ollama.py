@@ -1,10 +1,12 @@
 """Ollama adapter — the laptop-mode default (no cloud account, no API cost)."""
 
+import json
+from collections.abc import Iterator
 from typing import Any
 
 import requests
 
-from scriptorium_llm.base import ChatMessage, ChatResponse
+from scriptorium_llm.base import ChatMessage, ChatResponse, StreamEvent
 
 _EMBED_BATCH_SIZE = 16
 
@@ -42,7 +44,7 @@ class OllamaProvider:
         stream: bool = False,
     ) -> ChatResponse:
         if stream:
-            raise NotImplementedError("streaming arrives with the agent loop (M3)")
+            raise ValueError("use chat_stream() for streaming")
         payload: dict[str, Any] = {
             "model": self._chat_model,
             "messages": messages,
@@ -62,3 +64,45 @@ class OllamaProvider:
                 "output": body.get("eval_count", 0),
             },
         )
+
+    def chat_stream(
+        self,
+        messages: list[ChatMessage],
+        tools: list[dict[str, Any]] | None = None,
+    ) -> Iterator[StreamEvent]:
+        payload: dict[str, Any] = {
+            "model": self._chat_model,
+            "messages": messages,
+            "stream": True,
+        }
+        if tools:
+            payload["tools"] = tools
+        response = requests.post(
+            f"{self._host}/api/chat",
+            json=payload,
+            stream=True,
+            timeout=self._timeout_s,
+        )
+        response.raise_for_status()
+        for line in response.iter_lines():
+            if not line:
+                continue
+            body = json.loads(line)
+            message = body.get("message", {})
+            if message.get("content"):
+                yield StreamEvent(type="content_delta", text=message["content"])
+            for call in message.get("tool_calls") or []:
+                function = call.get("function", {})
+                yield StreamEvent(
+                    type="tool_call",
+                    tool_name=function.get("name", ""),
+                    tool_input=function.get("arguments") or {},
+                )
+            if body.get("done"):
+                yield StreamEvent(
+                    type="done",
+                    usage={
+                        "input": body.get("prompt_eval_count", 0),
+                        "output": body.get("eval_count", 0),
+                    },
+                )

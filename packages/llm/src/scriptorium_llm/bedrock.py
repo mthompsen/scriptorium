@@ -2,9 +2,10 @@
 [bedrock] extra (boto3). Exercised end to end in M6; unit-tested now."""
 
 import json
+from collections.abc import Iterator
 from typing import Any
 
-from scriptorium_llm.base import ChatMessage, ChatResponse
+from scriptorium_llm.base import ChatMessage, ChatResponse, StreamEvent
 
 
 class BedrockProvider:
@@ -34,14 +35,52 @@ class BedrockProvider:
             embeddings.append(json.loads(response["body"].read())["embedding"])
         return embeddings
 
-    def chat(
+    def chat_stream(
         self,
         messages: list[ChatMessage],
         tools: list[dict[str, Any]] | None = None,
-        stream: bool = False,
-    ) -> ChatResponse:
-        if stream:
-            raise NotImplementedError("streaming arrives with the agent loop (M3)")
+    ) -> Iterator[StreamEvent]:
+        response = self._client.converse_stream(**self._converse_kwargs(messages, tools))
+        # toolUse input streams as partial JSON strings; accumulate per block.
+        tool_name = ""
+        tool_input_parts: list[str] = []
+        in_tool_block = False
+        for event in response["stream"]:
+            if "contentBlockStart" in event:
+                start = event["contentBlockStart"].get("start", {})
+                if "toolUse" in start:
+                    in_tool_block = True
+                    tool_name = start["toolUse"].get("name", "")
+                    tool_input_parts = []
+            elif "contentBlockDelta" in event:
+                delta = event["contentBlockDelta"].get("delta", {})
+                if "text" in delta:
+                    yield StreamEvent(type="content_delta", text=delta["text"])
+                if "toolUse" in delta:
+                    tool_input_parts.append(delta["toolUse"].get("input", ""))
+            elif "contentBlockStop" in event and in_tool_block:
+                raw = "".join(tool_input_parts)
+                yield StreamEvent(
+                    type="tool_call",
+                    tool_name=tool_name,
+                    tool_input=json.loads(raw) if raw else {},
+                )
+                in_tool_block = False
+            elif "metadata" in event:
+                usage = event["metadata"].get("usage", {})
+                yield StreamEvent(
+                    type="done",
+                    usage={
+                        "input": usage.get("inputTokens", 0),
+                        "output": usage.get("outputTokens", 0),
+                    },
+                )
+
+    def _converse_kwargs(
+        self,
+        messages: list[ChatMessage],
+        tools: list[dict[str, Any]] | None,
+    ) -> dict[str, Any]:
         system = [
             {"text": m["content"]} for m in messages if m["role"] == "system"
         ]
@@ -58,7 +97,17 @@ class BedrockProvider:
             kwargs["system"] = system
         if tools:
             kwargs["toolConfig"] = {"tools": tools}
-        response = self._client.converse(**kwargs)
+        return kwargs
+
+    def chat(
+        self,
+        messages: list[ChatMessage],
+        tools: list[dict[str, Any]] | None = None,
+        stream: bool = False,
+    ) -> ChatResponse:
+        if stream:
+            raise ValueError("use chat_stream() for streaming")
+        response = self._client.converse(**self._converse_kwargs(messages, tools))
         parts = response["output"]["message"]["content"]
         text = "".join(part.get("text", "") for part in parts)
         usage = response.get("usage", {})

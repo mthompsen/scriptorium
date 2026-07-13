@@ -57,9 +57,57 @@ def test_chat_returns_content_and_usage(monkeypatch: pytest.MonkeyPatch) -> None
     assert captured["stream"] is False
 
 
-def test_chat_stream_is_not_yet_supported() -> None:
-    with pytest.raises(NotImplementedError):
+def test_chat_rejects_stream_flag_in_favor_of_chat_stream() -> None:
+    with pytest.raises(ValueError, match="chat_stream"):
         OllamaProvider().chat([{"role": "user", "content": "hi"}], stream=True)
+
+
+class FakeStreamingResponse:
+    def __init__(self, lines: list[dict]) -> None:
+        self._lines = lines
+
+    def raise_for_status(self) -> None:
+        pass
+
+    def iter_lines(self):
+        for line in self._lines:
+            yield json.dumps(line).encode()
+
+
+def test_chat_stream_yields_deltas_tool_calls_and_done(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    lines = [
+        {"message": {"role": "assistant", "content": "Hel"}, "done": False},
+        {"message": {"role": "assistant", "content": "lo"}, "done": False},
+        {
+            "message": {
+                "role": "assistant",
+                "content": "",
+                "tool_calls": [
+                    {"function": {"name": "search_documents", "arguments": {"query": "pto"}}}
+                ],
+            },
+            "done": False,
+        },
+        {
+            "message": {"role": "assistant", "content": ""},
+            "done": True,
+            "prompt_eval_count": 100,
+            "eval_count": 30,
+        },
+    ]
+    monkeypatch.setattr(
+        "requests.post", lambda *a, **k: FakeStreamingResponse(lines)
+    )
+
+    events = list(OllamaProvider().chat_stream([{"role": "user", "content": "q"}]))
+
+    assert [e.type for e in events] == ["content_delta", "content_delta", "tool_call", "done"]
+    assert "".join(e.text for e in events if e.type == "content_delta") == "Hello"
+    assert events[2].tool_name == "search_documents"
+    assert events[2].tool_input == {"query": "pto"}
+    assert events[3].usage == {"input": 100, "output": 30}
 
 
 def test_payload_is_json_serializable() -> None:
