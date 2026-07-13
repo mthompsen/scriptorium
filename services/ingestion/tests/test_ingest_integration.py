@@ -51,9 +51,14 @@ def test_ingest_persists_raw_bytes_and_advances_registry(postgres_url, mongo_url
             (document_id, DEMO_TENANT_ID),
         )
 
+    class NoopRunner:
+        def submit(self, job) -> None:  # pipeline covered by its own unit tests
+            pass
+
     app = create_app(
         registry=DocumentRegistry(postgres_url),
         store=RawDocumentStore(mongo_url, database="test"),
+        runner=NoopRunner(),
     )
     response = app.test_client().post(
         "/ingest",

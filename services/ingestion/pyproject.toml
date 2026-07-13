@@ -15,6 +15,11 @@ dependencies = [
     "psycopg[binary]>=3.1",
     "pymongo>=4.7",
     "bcrypt>=4.1",
+    "requests>=2.32",
+    "pypdf>=4.2",
+    "python-docx>=1.1",
+    "beautifulsoup4>=4.12",
+    # scriptorium-llm is installed by path (see packages/llm/README.md)
 ]
 
 [project.optional-dependencies]

@@ -17,9 +17,21 @@ class DocumentRegistry:
 
     def mark_stored(self, tenant_id: str, document_id: str) -> bool:
         """Advance a document to 'stored'. Returns False if no such tenant-scoped row."""
+        return self.set_status(tenant_id, document_id, "stored")
+
+    def set_status(self, tenant_id: str, document_id: str, status: str) -> bool:
         with psycopg.connect(self._database_url) as conn:
             cursor = conn.execute(
-                "UPDATE documents SET status = 'stored' WHERE tenant_id = %s AND id = %s",
+                "UPDATE documents SET status = %s WHERE tenant_id = %s AND id = %s",
+                (status, tenant_id, document_id),
+            )
+            return cursor.rowcount == 1
+
+    def mark_indexed(self, tenant_id: str, document_id: str) -> bool:
+        with psycopg.connect(self._database_url) as conn:
+            cursor = conn.execute(
+                "UPDATE documents SET status = 'indexed', indexed_at = now() "
+                "WHERE tenant_id = %s AND id = %s",
                 (tenant_id, document_id),
             )
             return cursor.rowcount == 1

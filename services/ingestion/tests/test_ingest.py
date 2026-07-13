@@ -22,8 +22,18 @@ class FakeStore:
         self.puts.append(kwargs)
 
 
-def client(registry: FakeRegistry, store: FakeStore):
-    return create_app(registry=registry, store=store).test_client()
+class FakeRunner:
+    def __init__(self) -> None:
+        self.jobs: list = []
+
+    def submit(self, job) -> None:
+        self.jobs.append(job)
+
+
+def client(registry: FakeRegistry, store: FakeStore, runner: FakeRunner | None = None):
+    return create_app(
+        registry=registry, store=store, runner=runner or FakeRunner()
+    ).test_client()
 
 
 def multipart(document_id: str, tenant_id: str) -> dict:
@@ -34,19 +44,26 @@ def multipart(document_id: str, tenant_id: str) -> dict:
     }
 
 
-def test_ingest_stores_bytes_and_marks_document_stored() -> None:
-    registry, store = FakeRegistry(), FakeStore()
+def test_ingest_stores_bytes_marks_stored_and_schedules_pipeline() -> None:
+    registry, store, runner = FakeRegistry(), FakeStore(), FakeRunner()
     document_id, tenant_id = str(uuid.uuid4()), str(uuid.uuid4())
 
-    response = client(registry, store).post(
+    response = client(registry, store, runner).post(
         "/ingest", data=multipart(document_id, tenant_id), content_type="multipart/form-data"
     )
 
     assert response.status_code == 200
-    assert response.get_json() == {"document_id": document_id, "status": "stored"}
+    assert response.get_json() == {
+        "document_id": document_id,
+        "status": "stored",
+        "pipeline": "scheduled",
+    }
     assert store.puts[0]["content"] == b"# Employee Handbook"
     assert store.puts[0]["mime_type"] == "text/markdown"
     assert registry.calls == [(tenant_id, document_id)]
+    assert len(runner.jobs) == 1
+    assert runner.jobs[0].document_id == document_id
+    assert runner.jobs[0].content == b"# Employee Handbook"
 
 
 def test_ingest_rejects_non_uuid_identifiers() -> None:
