@@ -16,3 +16,14 @@ class RetrievalClient:
         )
         response.raise_for_status()
         return response.json()["results"]
+
+    def fetch_chunks(
+        self, tenant_id: str, document_id: str, from_ordinal: int, to_ordinal: int
+    ) -> list[dict]:
+        response = requests.get(
+            f"{self._base_url}/document/{document_id}/chunks",
+            params={"tenant_id": tenant_id, "from": from_ordinal, "to": to_ordinal},
+            timeout=self._timeout_s,
+        )
+        response.raise_for_status()
+        return response.json()["chunks"]

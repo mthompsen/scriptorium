@@ -22,6 +22,7 @@ class OpenSearchIndex:
                     "tenant_id": {"type": "keyword"},
                     "document_id": {"type": "keyword"},
                     "chunk_id": {"type": "keyword"},
+                    "ordinal": {"type": "integer"},
                     "text": {"type": "text"},
                     "embedding": {
                         "type": "knn_vector",
@@ -64,7 +65,9 @@ class OpenSearchIndex:
     ) -> None:
         lines: list[str] = []
         index = self.index_name(tenant_id)
-        for chunk_id, text, embedding in zip(chunk_ids, texts, embeddings, strict=True):
+        for ordinal, (chunk_id, text, embedding) in enumerate(
+            zip(chunk_ids, texts, embeddings, strict=True)
+        ):
             lines.append(json.dumps({"index": {"_index": index, "_id": chunk_id}}))
             lines.append(
                 json.dumps(
@@ -72,6 +75,7 @@ class OpenSearchIndex:
                         "tenant_id": tenant_id,
                         "document_id": document_id,
                         "chunk_id": chunk_id,
+                        "ordinal": ordinal,
                         "text": text,
                         "embedding": embedding,
                     }

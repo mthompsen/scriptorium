@@ -11,6 +11,8 @@ dependencies = [
     "flask>=3.0,<4",
     "gunicorn>=23",
     "requests>=2.32",
+    "jsonschema>=4.22",
+    "psycopg[binary]>=3.1",
     # scriptorium-llm is installed by path (see packages/llm/README.md)
 ]
 

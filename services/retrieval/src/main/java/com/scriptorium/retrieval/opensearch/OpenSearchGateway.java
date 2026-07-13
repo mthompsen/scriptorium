@@ -40,6 +40,20 @@ public class OpenSearchGateway implements SearchGateway {
         return search(tenantId, body);
     }
 
+    @Override
+    public List<RetrievedChunk> fetchChunks(
+            String tenantId, String documentId, int fromOrdinal, int toOrdinal) {
+        Map<String, Object> body = Map.of(
+                "size", toOrdinal - fromOrdinal + 1,
+                "_source", List.of("chunk_id", "document_id", "text"),
+                "sort", List.of(Map.of("ordinal", "asc")),
+                "query", Map.of("bool", Map.of("filter", List.of(
+                        Map.of("term", Map.of("document_id", documentId)),
+                        Map.of("range", Map.of("ordinal",
+                                Map.of("gte", fromOrdinal, "lte", toOrdinal)))))));
+        return search(tenantId, body);
+    }
+
     private List<RetrievedChunk> search(String tenantId, Map<String, Object> body) {
         String index = "chunks-" + tenantId.toLowerCase();
         JsonNode response;

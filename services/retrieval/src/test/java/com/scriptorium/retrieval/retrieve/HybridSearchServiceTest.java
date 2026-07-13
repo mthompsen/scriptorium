@@ -29,6 +29,12 @@ class HybridSearchServiceTest {
                 assertThat(embedding).containsExactly(0.1, 0.2, 0.3);
                 return List.of(chunk("shared"), chunk("vec1"));
             }
+
+            @Override
+            public List<RetrievedChunk> fetchChunks(
+                    String tenantId, String documentId, int fromOrdinal, int toOrdinal) {
+                return List.of();
+            }
         };
 
         List<RetrievedChunk> results =
@@ -48,6 +54,12 @@ class HybridSearchServiceTest {
 
             @Override
             public List<RetrievedChunk> knn(String tenantId, List<Double> embedding, int size) {
+                return List.of();
+            }
+
+            @Override
+            public List<RetrievedChunk> fetchChunks(
+                    String tenantId, String documentId, int fromOrdinal, int toOrdinal) {
                 return List.of();
             }
         };
