@@ -3,12 +3,25 @@
 import { useRouter } from 'next/navigation';
 import { FormEvent, useEffect, useRef, useState } from 'react';
 
-import { api, ApiError, ChatMessage, ChatSession, postJson } from '@/lib/api';
+import {
+  api,
+  ApiError,
+  ChatMessage,
+  ChatSession,
+  postJson,
+  streamMessage,
+  ToolEvent,
+} from '@/lib/api';
+
+interface DisplayMessage extends ChatMessage {
+  tools?: ToolEvent[];
+  live?: boolean;
+}
 
 export default function ChatPage() {
   const router = useRouter();
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,6 +39,12 @@ export default function ChatPage() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const patchLive = (patch: (live: DisplayMessage) => DisplayMessage) => {
+    setMessages((prev) =>
+      prev.map((message) => (message.live ? patch(message) : message)),
+    );
+  };
+
   async function send(event: FormEvent) {
     event.preventDefault();
     const content = input.trim();
@@ -34,6 +53,7 @@ export default function ChatPage() {
     }
     setBusy(true);
     setError(null);
+    setInput('');
     try {
       let id = sessionId;
       if (!id) {
@@ -43,18 +63,37 @@ export default function ChatPage() {
         id = session.id;
         setSessionId(id);
       }
-      const result = await postJson<{ user: ChatMessage; assistant: ChatMessage }>(
-        `/chat/sessions/${id}/messages`,
-        { content },
-      );
-      setMessages((prev) => [...prev, result.user, result.assistant]);
-      setInput('');
+      // Live placeholder that tokens and tool events stream into.
+      setMessages((prev) => [
+        ...prev,
+        { id: 'live', role: 'assistant', content: '', citations: [], tools: [], live: true },
+      ]);
+      await streamMessage(id, content, {
+        onUserMessage: (message) =>
+          setMessages((prev) => [
+            ...prev.filter((m) => !m.live),
+            message,
+            { id: 'live', role: 'assistant', content: '', citations: [], tools: [], live: true },
+          ]),
+        onTool: (tool) =>
+          patchLive((live) => ({ ...live, tools: [...(live.tools ?? []), tool] })),
+        onToken: (text) => patchLive((live) => ({ ...live, content: live.content + text })),
+        onFinal: ({ message }) =>
+          setMessages((prev) =>
+            prev.map((m) => (m.live ? { ...message, tools: m.tools } : m)),
+          ),
+        onError: (message) => {
+          setError(message);
+          setMessages((prev) => prev.filter((m) => !m.live));
+        },
+      });
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) {
         router.replace('/login');
         return;
       }
       setError(e instanceof ApiError ? e.message : 'Failed to send message');
+      setMessages((prev) => prev.filter((m) => !m.live));
     } finally {
       setBusy(false);
     }
@@ -69,8 +108,8 @@ export default function ChatPage() {
       >
         {messages.length === 0 && (
           <p className="text-sm text-slate-500">
-            Ask a question about your documents — answers are grounded in the corpus and cited.
-            Local model inference can take up to a minute.
+            Ask a question about your documents — the agent searches the corpus, shows its tool
+            calls, and cites its sources. Local inference can take a minute.
           </p>
         )}
         {messages.map((message) => (
@@ -82,7 +121,26 @@ export default function ChatPage() {
                 : 'mr-auto max-w-[80%] rounded-lg bg-slate-100 px-3 py-2 text-sm'
             }
           >
-            <p>{message.content}</p>
+            {(message.tools?.length ?? 0) > 0 && (
+              <details className="mb-2 border-b border-slate-300 pb-1 text-xs text-slate-600">
+                <summary className="cursor-pointer font-medium">
+                  Agent activity ({message.tools!.length} tool call
+                  {message.tools!.length > 1 ? 's' : ''})
+                </summary>
+                <ul className="mt-1 space-y-1">
+                  {message.tools!.map((tool, index) => (
+                    <li key={index}>
+                      <code className="rounded bg-slate-200 px-1">{tool.name}</code>{' '}
+                      {tool.summary}
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
+            <p>
+              {message.content}
+              {message.live && <span className="animate-pulse">▋</span>}
+            </p>
             {message.citations?.length > 0 && (
               <details className="mt-2 border-t border-slate-300 pt-1 text-xs text-slate-600">
                 <summary className="cursor-pointer font-medium">
