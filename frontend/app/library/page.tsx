@@ -6,7 +6,9 @@ import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { api, API_BASE, ApiError, DocumentRow } from '@/lib/api';
 
 const STATUS_STYLES: Record<string, string> = {
-  stored: 'bg-emerald-100 text-emerald-800',
+  indexed: 'bg-emerald-100 text-emerald-800',
+  stored: 'bg-sky-100 text-sky-800',
+  processing: 'bg-sky-100 text-sky-800',
   uploaded: 'bg-amber-100 text-amber-800',
   failed: 'bg-red-100 text-red-800',
 };

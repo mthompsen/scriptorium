@@ -53,10 +53,17 @@ export interface DocumentRow {
   created_at: string;
 }
 
+export interface ChatCitation {
+  chunk_id: string;
+  document_id: string;
+  snippet: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant' | 'tool';
   content: string;
+  citations: ChatCitation[];
 }
 
 export interface ChatSession {

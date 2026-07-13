@@ -1,17 +1,15 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { TenantContext } from '../auth/tenant-context';
+import { AgentClient } from './agent.client';
 import { ChatMessageRow, ChatRepository, ChatSessionRow } from './chat.repository';
-
-/** M1 stub reply — replaced by the RAG answer path in M2 (DESIGN.md Section 15). */
-const echoReply = (content: string): string =>
-  `Echo (stub — grounded answers arrive in M2): ${content}`;
 
 @Injectable()
 export class ChatService {
   constructor(
     private readonly tenant: TenantContext,
     private readonly repository: ChatRepository,
+    private readonly agent: AgentClient,
   ) {}
 
   createSession(title?: string): Promise<ChatSessionRow> {
@@ -32,10 +30,14 @@ export class ChatService {
   ): Promise<{ user: ChatMessageRow; assistant: ChatMessageRow }> {
     await this.requireSession(sessionId);
     const user = await this.repository.insertMessage(sessionId, 'user', content);
+    // Grounded RAG answer from the reason path (M2, ADR-0004); the tenant
+    // scope is injected server-side — never taken from the client.
+    const answer = await this.agent.answer(this.tenant.tenantId, content);
     const assistant = await this.repository.insertMessage(
       sessionId,
       'assistant',
-      echoReply(content),
+      answer.answer,
+      answer.citations,
     );
     return { user, assistant };
   }

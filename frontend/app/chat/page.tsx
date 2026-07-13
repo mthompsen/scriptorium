@@ -69,7 +69,8 @@ export default function ChatPage() {
       >
         {messages.length === 0 && (
           <p className="text-sm text-slate-500">
-            Ask a question about your documents. (M1: replies are a stub echo.)
+            Ask a question about your documents — answers are grounded in the corpus and cited.
+            Local model inference can take up to a minute.
           </p>
         )}
         {messages.map((message) => (
@@ -81,7 +82,23 @@ export default function ChatPage() {
                 : 'mr-auto max-w-[80%] rounded-lg bg-slate-100 px-3 py-2 text-sm'
             }
           >
-            {message.content}
+            <p>{message.content}</p>
+            {message.citations?.length > 0 && (
+              <details className="mt-2 border-t border-slate-300 pt-1 text-xs text-slate-600">
+                <summary className="cursor-pointer font-medium">
+                  {message.citations.length} source
+                  {message.citations.length > 1 ? 's' : ''}
+                </summary>
+                <ul className="mt-1 space-y-1">
+                  {message.citations.map((citation) => (
+                    <li key={citation.chunk_id}>
+                      <code className="rounded bg-slate-200 px-1">[{citation.chunk_id}]</code>{' '}
+                      {citation.snippet}
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
           </div>
         ))}
         <div ref={bottomRef} />

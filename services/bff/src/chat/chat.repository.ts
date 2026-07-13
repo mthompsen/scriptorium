@@ -11,11 +11,18 @@ export interface ChatSessionRow {
   created_at: string;
 }
 
+export interface ChatCitation {
+  chunk_id: string;
+  document_id: string;
+  snippet: string;
+}
+
 export interface ChatMessageRow {
   id: string;
   session_id: string;
   role: 'user' | 'assistant' | 'tool';
   content: string;
+  citations: ChatCitation[];
   created_at: string;
 }
 
@@ -58,11 +65,12 @@ export class ChatRepository {
     sessionId: string,
     role: ChatMessageRow['role'],
     content: string,
+    citations: ChatCitation[] = [],
   ): Promise<ChatMessageRow> {
     const result = await this.pool.query(
-      `INSERT INTO chat_messages (session_id, role, content)
-       VALUES ($1, $2, $3) RETURNING *`,
-      [sessionId, role, content],
+      `INSERT INTO chat_messages (session_id, role, content, citations)
+       VALUES ($1, $2, $3, $4) RETURNING *`,
+      [sessionId, role, content, JSON.stringify(citations)],
     );
     return result.rows[0] as ChatMessageRow;
   }
