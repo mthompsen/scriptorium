@@ -96,7 +96,13 @@ services:
     environment:
       RETRIEVAL_URL: http://retrieval:8080
       OLLAMA_URL: http://ollama:11434
+      # LLM_PROVIDER=anthropic + CHAT_MODEL=claude-... upgrades generation;
+      # local 3B via Ollama remains the keyless default (see .env.example).
+      LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
       CHAT_MODEL: ${CHAT_MODEL:-llama3.2:3b}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      JUDGE_LLM_PROVIDER: ${JUDGE_LLM_PROVIDER:-}
+      JUDGE_CHAT_MODEL: ${JUDGE_CHAT_MODEL:-}
       DATABASE_URL: postgresql://scriptorium:${POSTGRES_PASSWORD:-scriptorium-dev}@postgres:5432/scriptorium
       AGENT_MAX_STEPS: ${AGENT_MAX_STEPS:-6}
       AGENT_TIMEOUT_S: ${AGENT_TIMEOUT_S:-240}

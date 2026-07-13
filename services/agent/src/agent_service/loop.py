@@ -48,7 +48,18 @@ SYSTEM_PROMPT = (
     "exactly - chunk ids look like [ab12cd34-0]. Never cite document_id "
     "values (long 36-character UUIDs); only chunk_id values are valid "
     "citations. If the tools return nothing relevant, say you cannot find "
-    "grounded support in the corpus. Never answer from your own memory."
+    "grounded support in the corpus. Never answer from your own memory.\n\n"
+    "Examples of correct citation style (ids illustrative):\n"
+    '1. Question: "How many vacation days do we get?" - search returns a '
+    'chunk with chunk_id 3f9a12bc-0 stating the allowance. Answer: '
+    '"Employees receive 25 days of paid time off per year [3f9a12bc-0]."\n'
+    '2. Question: "What equipment do new hires get?" - search returns '
+    "chunks 7c01de2a-1 (equipment) and 7c01de2a-2 (accounts). Answer: "
+    '"New hires receive a MacBook Pro and a 27-inch monitor [7c01de2a-1]. '
+    'Email and Slack accounts are provisioned on day one [7c01de2a-2]."\n'
+    '3. Question: "What was Q3 revenue?" - no retrieved chunk mentions '
+    'revenue. Answer: "I cannot find grounded support for Q3 revenue '
+    'figures in the corpus." (no citation, no guessing)'
 )
 
 

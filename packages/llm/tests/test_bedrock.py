@@ -65,6 +65,36 @@ def test_chat_maps_system_and_user_messages_to_converse() -> None:
     ]
 
 
+def test_function_format_tools_convert_to_toolspec() -> None:
+    client = FakeBedrockClient()
+    provider = BedrockProvider(client=client)
+
+    provider.chat(
+        [{"role": "user", "content": "q"}],
+        tools=[
+            {
+                "type": "function",
+                "function": {
+                    "name": "search_documents",
+                    "description": "search",
+                    "parameters": {"type": "object"},
+                },
+            }
+        ],
+    )
+
+    tool_config = client.conversations[0]["toolConfig"]
+    assert tool_config["tools"] == [
+        {
+            "toolSpec": {
+                "name": "search_documents",
+                "description": "search",
+                "inputSchema": {"json": {"type": "object"}},
+            }
+        }
+    ]
+
+
 def test_chat_stream_accumulates_partial_tool_input() -> None:
     provider = BedrockProvider(client=FakeBedrockClient())
 

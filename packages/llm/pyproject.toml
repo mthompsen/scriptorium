@@ -13,10 +13,12 @@ dependencies = [
 
 [project.optional-dependencies]
 bedrock = ["boto3>=1.34"]
+anthropic = ["anthropic>=0.90"]
 dev = [
     "pytest>=8",
     "ruff>=0.5",
     "boto3>=1.34",
+    "anthropic>=0.90",
 ]
 
 [tool.setuptools.packages.find]

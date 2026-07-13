@@ -8,6 +8,26 @@ from typing import Any
 from scriptorium_llm.base import ChatMessage, ChatResponse, StreamEvent
 
 
+def _convert_tools_to_toolspec(tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Function-format tool defs -> Bedrock toolSpec (already-toolSpec passes through)."""
+    converted = []
+    for tool in tools:
+        if "toolSpec" in tool:
+            converted.append(tool)
+            continue
+        function = tool.get("function", tool)
+        converted.append(
+            {
+                "toolSpec": {
+                    "name": function["name"],
+                    "description": function.get("description", ""),
+                    "inputSchema": {"json": function["parameters"]},
+                }
+            }
+        )
+    return converted
+
+
 class BedrockProvider:
     def __init__(
         self,
@@ -96,7 +116,7 @@ class BedrockProvider:
         if system:
             kwargs["system"] = system
         if tools:
-            kwargs["toolConfig"] = {"tools": tools}
+            kwargs["toolConfig"] = {"tools": _convert_tools_to_toolspec(tools)}
         return kwargs
 
     def chat(

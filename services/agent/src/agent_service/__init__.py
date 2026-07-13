@@ -45,7 +45,15 @@ def _build_default_dependencies() -> tuple:
         max_steps=int(os.environ.get("AGENT_MAX_STEPS", "6")),
         timeout_s=float(os.environ.get("AGENT_TIMEOUT_S", "240")),
     )
-    return loop, retrieval, llm
+    # The groundedness judge may run on a different (stronger) model than the
+    # loop: JUDGE_LLM_PROVIDER / JUDGE_CHAT_MODEL override; default = main LLM.
+    judge_env = dict(os.environ)
+    if os.environ.get("JUDGE_LLM_PROVIDER"):
+        judge_env["LLM_PROVIDER"] = os.environ["JUDGE_LLM_PROVIDER"]
+    if os.environ.get("JUDGE_CHAT_MODEL"):
+        judge_env["CHAT_MODEL"] = os.environ["JUDGE_CHAT_MODEL"]
+    judge = create_provider(judge_env)
+    return loop, retrieval, judge
 
 
 def _sse(event_type: str, data: dict) -> str:
