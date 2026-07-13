@@ -1,4 +1,15 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
+import type { Response } from 'express';
 
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ChatMessageRow, ChatSessionRow } from './chat.repository';
@@ -21,11 +32,42 @@ export class ChatController {
   }
 
   @Post(':id/messages')
-  sendMessage(
+  async sendMessage(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: SendMessageDto,
-  ): Promise<{ user: ChatMessageRow; assistant: ChatMessageRow }> {
-    return this.chat.sendMessage(id, dto.content);
+    @Res() res: Response,
+    @Query('stream') stream?: string,
+  ): Promise<void> {
+    if (stream === 'false') {
+      const result = await this.chat.sendMessage(id, dto.content);
+      res.json(result);
+      return;
+    }
+    // SSE over POST (ADR-0005): tokens and tool events reach the browser live.
+    // The first event is awaited before headers flush so session/auth errors
+    // still surface as proper HTTP error responses.
+    const events = this.chat.sendMessageStream(id, dto.content);
+    const first = await events.next();
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+    const write = (event: { event: string; data: Record<string, unknown> }): void => {
+      res.write(`event: ${event.event}\ndata: ${JSON.stringify(event.data)}\n\n`);
+    };
+    try {
+      if (!first.done) {
+        write(first.value);
+        for await (const event of events) {
+          write(event);
+        }
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'stream failed';
+      res.write(`event: error\ndata: ${JSON.stringify({ message })}\n\n`);
+    } finally {
+      res.end();
+    }
   }
 
   @Get(':id/messages')

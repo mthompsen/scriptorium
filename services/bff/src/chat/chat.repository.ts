@@ -82,4 +82,12 @@ export class ChatRepository {
     );
     return result.rows as ChatMessageRow[];
   }
+
+  /** Backfill the trace → message link once the assistant row exists (ADR-0005). */
+  async linkRunToMessage(runId: string, messageId: string): Promise<void> {
+    await this.pool.query(`UPDATE agent_runs SET message_id = $2 WHERE id = $1`, [
+      runId,
+      messageId,
+    ]);
+  }
 }

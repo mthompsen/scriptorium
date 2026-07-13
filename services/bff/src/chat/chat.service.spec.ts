@@ -1,7 +1,7 @@
 import { BadGatewayException, NotFoundException } from '@nestjs/common';
 
 import type { TenantContext } from '../auth/tenant-context';
-import type { AgentClient } from './agent.client';
+import type { AgentClient, AgentStreamEvent } from './agent.client';
 import type { ChatRepository } from './chat.repository';
 import { ChatService } from './chat.service';
 
@@ -10,7 +10,24 @@ const session = { id: 'session-1', tenant_id: 'tenant-1', user_id: 'user-1' };
 
 const citation = { chunk_id: 'ab12cd34-0', document_id: 'doc-1', snippet: 'PTO is 25 days.' };
 
-const build = () => {
+const agentEvents = (): AgentStreamEvent[] => [
+  { event: 'run_start', data: { run_id: 'run-1' } },
+  { event: 'tool', data: { name: 'search_documents', summary: '1 result(s)' } },
+  { event: 'token', data: { text: 'You get 25 days ' } },
+  { event: 'token', data: { text: '[ab12cd34-0].' } },
+  {
+    event: 'final',
+    data: {
+      run_id: 'run-1',
+      answer: 'You get 25 days [ab12cd34-0].',
+      citations: [citation],
+      grounded: true,
+    },
+  },
+];
+
+const build = (events: AgentStreamEvent[] = agentEvents()) => {
+  let messageCounter = 0;
   const repository = {
     createSession: jest.fn().mockResolvedValue(session),
     listSessions: jest.fn().mockResolvedValue([session]),
@@ -19,15 +36,21 @@ const build = () => {
       .fn()
       .mockImplementation(
         (sessionId: string, role: string, content: string, citations: unknown[] = []) =>
-          Promise.resolve({ id: `${role}-msg`, session_id: sessionId, role, content, citations }),
+          Promise.resolve({
+            id: `msg-${++messageCounter}`,
+            session_id: sessionId,
+            role,
+            content,
+            citations,
+          }),
       ),
     listMessages: jest.fn().mockResolvedValue([]),
+    linkRunToMessage: jest.fn().mockResolvedValue(undefined),
   };
   const agent = {
-    answer: jest.fn().mockResolvedValue({
-      answer: 'You get 25 days of PTO [ab12cd34-0].',
-      citations: [citation],
-      grounded: true,
+    // eslint-disable-next-line @typescript-eslint/require-await
+    answerStream: jest.fn().mockImplementation(async function* () {
+      yield* events;
     }),
   };
   return {
@@ -41,48 +64,78 @@ const build = () => {
   };
 };
 
-describe('ChatService', () => {
-  it('stores the user message and the grounded agent answer with citations', async () => {
+const collect = async (iterable: AsyncGenerator<{ event: string; data: unknown }>) => {
+  const out: { event: string; data: unknown }[] = [];
+  for await (const item of iterable) {
+    out.push(item);
+  }
+  return out;
+};
+
+describe('ChatService (streaming)', () => {
+  it('stores the user message, re-emits agent events, and persists the final answer', async () => {
     const { service, repository, agent } = build();
 
-    const result = await service.sendMessage('session-1', 'How much PTO do I get?');
+    const events = await collect(service.sendMessageStream('session-1', 'How much PTO?'));
 
-    expect(agent.answer).toHaveBeenCalledWith('tenant-1', 'How much PTO do I get?');
+    expect(agent.answerStream).toHaveBeenCalledWith('tenant-1', 'How much PTO?');
+    expect(events.map((e) => e.event)).toEqual([
+      'user_message',
+      'run_start',
+      'tool',
+      'token',
+      'token',
+      'final',
+    ]);
     expect(repository.insertMessage).toHaveBeenNthCalledWith(
       1,
       'session-1',
       'user',
-      'How much PTO do I get?',
+      'How much PTO?',
     );
     expect(repository.insertMessage).toHaveBeenNthCalledWith(
       2,
       'session-1',
       'assistant',
-      'You get 25 days of PTO [ab12cd34-0].',
+      'You get 25 days [ab12cd34-0].',
       [citation],
     );
-    expect(result.assistant.citations).toEqual([citation]);
+    const final = events.at(-1)!.data as { message: { id: string } };
+    expect(final.message.id).toBe('msg-2');
   });
 
-  it('propagates agent unavailability after storing the user message', async () => {
-    const { service, repository, agent } = build();
-    agent.answer.mockRejectedValue(new BadGatewayException('Agent service unavailable'));
+  it('backfills the run→message link when the final event lands (ADR-0005)', async () => {
+    const { service, repository } = build();
 
-    await expect(service.sendMessage('session-1', 'hello there')).rejects.toThrow(
-      BadGatewayException,
-    );
-    expect(repository.insertMessage).toHaveBeenCalledTimes(1); // user message only
+    await collect(service.sendMessageStream('session-1', 'PTO?'));
+
+    expect(repository.linkRunToMessage).toHaveBeenCalledWith('run-1', 'msg-2');
   });
 
-  it('refuses messages to sessions outside the tenant/user scope', async () => {
+  it('refuses sessions outside the tenant/user scope before storing anything', async () => {
     const { service, repository, agent } = build();
     repository.findSession.mockResolvedValue(undefined);
 
-    await expect(service.sendMessage('foreign-session', 'hi there')).rejects.toThrow(
+    await expect(collect(service.sendMessageStream('foreign', 'hi'))).rejects.toThrow(
       NotFoundException,
     );
-    expect(agent.answer).not.toHaveBeenCalled();
-    expect(repository.findSession).toHaveBeenCalledWith('tenant-1', 'user-1', 'foreign-session');
+    expect(repository.insertMessage).not.toHaveBeenCalled();
+    expect(agent.answerStream).not.toHaveBeenCalled();
+  });
+
+  it('non-streaming variant resolves user and assistant rows', async () => {
+    const { service } = build();
+
+    const result = await service.sendMessage('session-1', 'PTO?');
+
+    expect(result.user.role).toBe('user');
+    expect(result.assistant.content).toBe('You get 25 days [ab12cd34-0].');
+  });
+
+  it('non-streaming variant fails loudly when the stream ends without a final', async () => {
+    const { service } = build([{ event: 'run_start', data: { run_id: 'run-1' } }]);
+
+    await expect(service.sendMessage('session-1', 'PTO?')).rejects.toThrow(BadGatewayException);
   });
 
   it('defaults blank titles when creating sessions', async () => {

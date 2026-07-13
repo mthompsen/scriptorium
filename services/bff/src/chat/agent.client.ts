@@ -7,13 +7,21 @@ export interface AgentCitation {
   snippet: string;
 }
 
-export interface AgentAnswer {
+export interface AgentFinal {
+  run_id: string;
   answer: string;
   citations: AgentCitation[];
   grounded: boolean;
 }
 
-/** Internal client for the agent service's /answer (reason path). */
+export interface AgentStreamEvent {
+  event: 'run_start' | 'token' | 'tool' | 'final';
+  data: Record<string, unknown>;
+}
+
+const STREAM_TIMEOUT_MS = 300_000; // bounded run: loop budgets sit below this
+
+/** Internal client for the agent service's /answer (reason path, SSE). */
 @Injectable()
 export class AgentClient {
   private readonly baseUrl: string;
@@ -22,22 +30,51 @@ export class AgentClient {
     this.baseUrl = config.get<string>('AGENT_URL', 'http://localhost:8002');
   }
 
-  async answer(tenantId: string, question: string): Promise<AgentAnswer> {
+  async *answerStream(tenantId: string, question: string): AsyncGenerator<AgentStreamEvent> {
     let response: Response;
     try {
       response = await fetch(`${this.baseUrl}/answer`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tenant_id: tenantId, question }),
-        // Local CPU inference is slow (ADR-0004); generous but bounded.
-        signal: AbortSignal.timeout(180_000),
+        body: JSON.stringify({ tenant_id: tenantId, question, stream: true }),
+        signal: AbortSignal.timeout(STREAM_TIMEOUT_MS),
       });
     } catch {
       throw new BadGatewayException('Agent service unavailable');
     }
-    if (!response.ok) {
+    if (!response.ok || !response.body) {
       throw new BadGatewayException(`Agent service responded ${response.status}`);
     }
-    return (await response.json()) as AgentAnswer;
+
+    const decoder = new TextDecoder();
+    let buffer = '';
+    for await (const chunk of response.body as unknown as AsyncIterable<Uint8Array>) {
+      buffer += decoder.decode(chunk, { stream: true });
+      let boundary: number;
+      while ((boundary = buffer.indexOf('\n\n')) >= 0) {
+        const block = buffer.slice(0, boundary);
+        buffer = buffer.slice(boundary + 2);
+        const parsed = parseSseBlock(block);
+        if (parsed) {
+          yield parsed;
+        }
+      }
+    }
   }
+}
+
+function parseSseBlock(block: string): AgentStreamEvent | undefined {
+  let event = '';
+  let data = '';
+  for (const line of block.split('\n')) {
+    if (line.startsWith('event: ')) {
+      event = line.slice('event: '.length).trim();
+    } else if (line.startsWith('data: ')) {
+      data = line.slice('data: '.length);
+    }
+  }
+  if (!event || !data) {
+    return undefined;
+  }
+  return { event, data: JSON.parse(data) } as AgentStreamEvent;
 }
