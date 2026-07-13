@@ -34,16 +34,45 @@ while ($true) {
   Start-Sleep -Seconds 3
 }
 
-Write-Host "4) ask a question; expect a grounded, cited answer (LLM inference may take a minute)"
+Write-Host "4) ask a question (JSON mode); expect a grounded, cited answer (LLM inference may take a minute)"
 $sess = Invoke-RestMethod -Uri "$base/chat/sessions" -Method Post -ContentType 'application/json' `
   -Body (@{ title = 'smoke' } | ConvertTo-Json) -WebSession $session
-$reply = Invoke-RestMethod -Uri "$base/chat/sessions/$($sess.id)/messages" -Method Post `
+$reply = Invoke-RestMethod -Uri "$base/chat/sessions/$($sess.id)/messages?stream=false" -Method Post `
   -ContentType 'application/json' -Body (@{ content = 'How many days of PTO do employees get?' } | ConvertTo-Json) `
   -WebSession $session -TimeoutSec 300
 Write-Host "   assistant: $($reply.assistant.content)"
 Write-Host "   citations: $(($reply.assistant.citations | ForEach-Object { $_.chunk_id }) -join ', ')"
 if ($reply.assistant.citations.Count -lt 1) { throw 'answer has no citations' }
 if ($reply.assistant.content -notmatch '25') { throw 'answer does not contain the grounded fact (25 days)' }
+
+Write-Host "4b) same question over SSE; expect tool, token, and final events"
+$token = $login.accessToken
+$sseBody = '{"content":"How many days of PTO do employees get?"}'
+$sse = & curl.exe -s -N --max-time 280 -X POST `
+  -H "Authorization: Bearer $token" -H "Content-Type: application/json" `
+  -d $sseBody "$base/chat/sessions/$($sess.id)/messages" | Out-String
+foreach ($expected in 'event: run_start', 'event: tool', 'event: token', 'event: final') {
+  if ($sse -notmatch [regex]::Escape($expected)) { throw "SSE stream missing '$expected'" }
+}
+$toolLine = ($sse -split "`n" | Where-Object { $_ -match '"name":' } | Select-Object -First 1).Trim()
+Write-Host "   OK stream carried run_start/tool/token/final ($toolLine)"
+
+Write-Host "4c) trace rows exist and the run links to its message"
+$trace = docker exec scriptorium-postgres-1 psql -U scriptorium -t -A -c `
+  "SELECT (SELECT count(*) FROM agent_runs WHERE status='succeeded' AND message_id IS NOT NULL), (SELECT count(*) FROM agent_steps WHERE kind='tool'), (SELECT count(*) FROM agent_steps WHERE kind='final');"
+$parts = $trace.Trim() -split '\|'
+if ([int]$parts[0] -lt 1) { throw 'no succeeded agent_runs linked to a message' }
+if ([int]$parts[1] -lt 1) { throw 'no tool steps traced' }
+if ([int]$parts[2] -lt 1) { throw 'no final steps traced' }
+Write-Host "   OK linked_runs=$($parts[0]) tool_steps=$($parts[1]) final_steps=$($parts[2])"
+
+Write-Host "4d) off-corpus question is refused, not answered from memory"
+$refusal = Invoke-RestMethod -Uri 'http://localhost:8002/answer' -Method Post -ContentType 'application/json' `
+  -Body '{"tenant_id":"11111111-1111-4111-8111-111111111111","question":"What is the capital of France?","stream":false}' `
+  -TimeoutSec 300
+if ($refusal.grounded) { throw 'expected an ungrounded refusal' }
+if ($refusal.citations.Count -ne 0) { throw 'refusal should carry no citations' }
+Write-Host "   OK refused: $($refusal.answer.Substring(0, [Math]::Min(80, $refusal.answer.Length)))..."
 
 Write-Host "5) unauthenticated request is rejected"
 try {

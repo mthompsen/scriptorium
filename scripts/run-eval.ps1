@@ -31,21 +31,32 @@ foreach ($name in $docIds.Keys) {
   }
 }
 
-Write-Host "4) run retrieval eval"
+Write-Host "4) run eval (retrieval + generation; generation runs the agent loop and is slow on CPU)"
 $dataset = Get-Content (Join-Path $evalDir 'queries.json') -Raw | ConvertFrom-Json
 $queries = @($dataset.queries | ForEach-Object {
   @{ query = $_.query; expected_document_id = $docIds[$_.expected_file] }
 })
 $body = @{
-  tenant_id = '11111111-1111-4111-8111-111111111111'
-  k         = $dataset.k
-  queries   = $queries
+  tenant_id         = '11111111-1111-4111-8111-111111111111'
+  k                 = $dataset.k
+  queries           = $queries
+  generation        = $true
+  generation_subset = 5
 } | ConvertTo-Json -Depth 5
-$result = Invoke-RestMethod -Uri "$agentBase/eval/run" -Method Post -ContentType 'application/json' -Body $body
+$result = Invoke-RestMethod -Uri "$agentBase/eval/run" -Method Post -ContentType 'application/json' `
+  -Body $body -TimeoutSec 3600
 
-Write-Host "`n=== Retrieval eval results ===" -ForegroundColor Green
-Write-Host ("recall@{0} = {1}   MRR = {2}   ({3} queries)" -f $result.k, $result.recall_at_k, $result.mrr, $result.query_count)
-$result.per_query | ForEach-Object {
+$r = $result.retrieval
+Write-Host "`n=== Retrieval ===" -ForegroundColor Green
+Write-Host ("recall@{0} = {1}   MRR = {2}   ({3} queries)" -f $r.k, $r.recall_at_k, $r.mrr, $r.query_count)
+$r.per_query | ForEach-Object {
   $rank = if ($null -eq $_.first_relevant_rank) { 'MISS' } else { "rank $($_.first_relevant_rank)" }
   Write-Host ("  {0,-62} {1}" -f $_.query, $rank)
+}
+
+$g = $result.generation
+Write-Host "`n=== Generation (agent loop, subset of $($g.query_count)) ===" -ForegroundColor Green
+Write-Host ("citation coverage = {0}   groundedness (LLM judge) = {1}" -f $g.citation_coverage, $g.groundedness)
+$g.per_query | ForEach-Object {
+  Write-Host ("  {0,-62} coverage={1} judge={2}" -f $_.query, $_.citation_coverage, $_.judge_grounded)
 }

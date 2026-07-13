@@ -97,10 +97,16 @@ services:
       RETRIEVAL_URL: http://retrieval:8080
       OLLAMA_URL: http://ollama:11434
       CHAT_MODEL: ${CHAT_MODEL:-llama3.2:3b}
+      DATABASE_URL: postgresql://scriptorium:${POSTGRES_PASSWORD:-scriptorium-dev}@postgres:5432/scriptorium
+      AGENT_MAX_STEPS: ${AGENT_MAX_STEPS:-6}
+      AGENT_TIMEOUT_S: ${AGENT_TIMEOUT_S:-240}
+      PII_FILTER: ${PII_FILTER:-basic}
     depends_on:
       retrieval:
         condition: service_healthy
       ollama-init:
+        condition: service_completed_successfully
+      migrate:
         condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8002/health').status==200 else 1)"]
