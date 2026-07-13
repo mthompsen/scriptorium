@@ -19,6 +19,26 @@ const ALLOWED_MIME_TYPES = new Set([
   'text/plain',
 ]);
 
+// Client-supplied MIME is unreliable (e.g. .md often arrives as
+// octet-stream); fall back to the extension for the supported formats.
+const EXTENSION_MIME_TYPES: Record<string, string> = {
+  '.pdf': 'application/pdf',
+  '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  '.md': 'text/markdown',
+  '.markdown': 'text/markdown',
+  '.html': 'text/html',
+  '.htm': 'text/html',
+  '.txt': 'text/plain',
+};
+
+const resolveMimeType = (filename: string, reported: string): string | undefined => {
+  if (ALLOWED_MIME_TYPES.has(reported)) {
+    return reported;
+  }
+  const extension = filename.slice(filename.lastIndexOf('.')).toLowerCase();
+  return EXTENSION_MIME_TYPES[extension];
+};
+
 export interface UploadedFile {
   originalname: string;
   mimetype: string;
@@ -34,7 +54,8 @@ export class DocumentsService {
   ) {}
 
   async upload(file: UploadedFile): Promise<DocumentRow> {
-    if (!ALLOWED_MIME_TYPES.has(file.mimetype)) {
+    const mimeType = resolveMimeType(file.originalname, file.mimetype);
+    if (!mimeType) {
       throw new BadRequestException(
         `Unsupported type ${file.mimetype}; allowed: PDF, DOCX, Markdown, HTML, plain text`,
       );
@@ -43,7 +64,7 @@ export class DocumentsService {
     const row = await this.repository.insert(
       this.tenant.tenantId,
       file.originalname,
-      file.mimetype,
+      mimeType,
       checksum,
     );
     try {
@@ -51,7 +72,7 @@ export class DocumentsService {
         documentId: row.id,
         tenantId: this.tenant.tenantId,
         filename: file.originalname,
-        mimeType: file.mimetype,
+        mimeType,
         bytes: file.buffer,
       });
     } catch {

@@ -54,11 +54,28 @@ describe('DocumentsService', () => {
     expect(result.status).toBe('stored');
   });
 
+  it('resolves generic octet-stream uploads by extension (browsers vary for .md)', async () => {
+    const { service, repository } = build();
+
+    await service.upload({ ...mdFile(), mimetype: 'application/octet-stream' });
+
+    expect(repository.insert).toHaveBeenCalledWith(
+      'tenant-1',
+      'handbook.md',
+      'text/markdown',
+      expect.any(String),
+    );
+  });
+
   it('rejects unsupported types before touching storage', async () => {
     const { service, repository } = build();
 
     await expect(
-      service.upload({ ...mdFile(), mimetype: 'application/x-msdownload' }),
+      service.upload({
+        ...mdFile(),
+        originalname: 'setup.exe',
+        mimetype: 'application/x-msdownload',
+      }),
     ).rejects.toThrow(BadRequestException);
     expect(repository.insert).not.toHaveBeenCalled();
   });
