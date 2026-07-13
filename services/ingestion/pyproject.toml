@@ -10,12 +10,18 @@ requires-python = ">=3.12"
 dependencies = [
     "flask>=3.0,<4",
     "gunicorn>=23",
+    "alembic>=1.13",
+    "sqlalchemy>=2.0",
+    "psycopg[binary]>=3.1",
+    "pymongo>=4.7",
+    "bcrypt>=4.1",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8",
     "ruff>=0.5",
+    "testcontainers[postgres,mongodb]>=4.7",
 ]
 
 [tool.setuptools.packages.find]
