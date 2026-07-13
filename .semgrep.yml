@@ -1,0 +1,3 @@
+# Custom Semgrep rules for Scriptorium.
+# The full SAST gate (community rulesets + CI wiring) lands in M5 (DESIGN.md Section 12).
+rules: []

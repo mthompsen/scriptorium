@@ -1,0 +1,8 @@
+# gitleaks configuration for Scriptorium.
+# CI wiring and the pre-commit hook land in M5 (DESIGN.md Section 12).
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Dev-only compose defaults, documented as non-secrets"
+paths = ['''infra/docker/\.env\.example''']
