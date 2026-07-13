@@ -16,4 +16,6 @@ COPY --from=build /opt/venv /opt/venv
 RUN useradd --system --create-home appuser
 USER appuser
 EXPOSE 8002
-CMD ["gunicorn", "--bind", "0.0.0.0:8002", "agent_service:create_app()"]
+# --timeout 300: local CPU LLM inference legitimately exceeds gunicorn's
+# 30s default (ADR-0004); threads keep /health responsive during a long answer.
+CMD ["gunicorn", "--bind", "0.0.0.0:8002", "--timeout", "300", "--workers", "2", "--threads", "4", "agent_service:create_app()"]

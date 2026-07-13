@@ -21,4 +21,4 @@ COPY services/ingestion/migrations ./migrations
 RUN useradd --system --create-home appuser
 USER appuser
 EXPOSE 8001
-CMD ["gunicorn", "--bind", "0.0.0.0:8001", "ingestion_service:create_app()"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8001", "--timeout", "120", "--workers", "2", "--threads", "4", "ingestion_service:create_app()"]
