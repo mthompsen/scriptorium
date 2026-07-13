@@ -4,6 +4,8 @@ ENV VIRTUAL_ENV=/opt/venv
 RUN python -m venv "$VIRTUAL_ENV"
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 WORKDIR /build
+COPY packages/llm ./packages/llm
+RUN pip install --no-cache-dir ./packages/llm
 COPY services/agent/pyproject.toml ./
 COPY services/agent/src ./src
 RUN pip install --no-cache-dir .

@@ -31,11 +31,14 @@ services:
       JWT_SECRET: ${JWT_SECRET:-dev-only-secret-change-me}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
       INGESTION_URL: http://ingestion:8001
+      AGENT_URL: http://agent:8002
       FRONTEND_ORIGIN: http://localhost:3000
     depends_on:
       migrate:
         condition: service_completed_successfully
       ingestion:
+        condition: service_healthy
+      agent:
         condition: service_healthy
     healthcheck:
       # 127.0.0.1, not localhost: same busybox/IPv6 pitfall as the frontend
@@ -66,11 +69,18 @@ services:
     environment:
       DATABASE_URL: postgresql://scriptorium:${POSTGRES_PASSWORD:-scriptorium-dev}@postgres:5432/scriptorium
       MONGO_URL: mongodb://mongodb:27017
+      OPENSEARCH_URL: http://opensearch:9200
+      OLLAMA_URL: http://ollama:11434
+      EMBED_MODEL: ${EMBED_MODEL:-nomic-embed-text}
     depends_on:
       migrate:
         condition: service_completed_successfully
       mongodb:
         condition: service_healthy
+      opensearch:
+        condition: service_healthy
+      ollama-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8001/health').status==200 else 1)"]
       interval: 10s
@@ -83,6 +93,15 @@ services:
       dockerfile: infra/docker/Dockerfile.agent
     ports:
       - "8002:8002"
+    environment:
+      RETRIEVAL_URL: http://retrieval:8080
+      OLLAMA_URL: http://ollama:11434
+      CHAT_MODEL: ${CHAT_MODEL:-llama3.2:3b}
+    depends_on:
+      retrieval:
+        condition: service_healthy
+      ollama-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8002/health').status==200 else 1)"]
       interval: 10s
@@ -95,6 +114,13 @@ services:
       dockerfile: infra/docker/Dockerfile.retrieval
     ports:
       - "8080:8080"
+    environment:
+      OPENSEARCH_URL: http://opensearch:9200
+      OLLAMA_URL: http://ollama:11434
+      EMBED_MODEL: ${EMBED_MODEL:-nomic-embed-text}
+    depends_on:
+      opensearch:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-fs", "http://localhost:8080/health"]
       interval: 10s
@@ -184,6 +210,20 @@ services:
       interval: 15s
       timeout: 10s
       retries: 5
+
+  # One-shot model puller: first run downloads ~2.3 GB into the ollama
+  # volume; later runs are instant (ADR-0004, runbook).
+  ollama-init:
+    image: ollama/ollama:latest
+    entrypoint: ["sh", "-c"]
+    command:
+      - ollama pull ${EMBED_MODEL:-nomic-embed-text} && ollama pull ${CHAT_MODEL:-llama3.2:3b}
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    depends_on:
+      ollama:
+        condition: service_healthy
+    restart: "no"
 
 volumes:
   pgdata:
