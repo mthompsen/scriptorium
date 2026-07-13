@@ -1,0 +1,18 @@
+# Build context: repo root
+FROM gradle:8.14-jdk21 AS build
+WORKDIR /build
+COPY services/retrieval/build.gradle services/retrieval/settings.gradle ./
+COPY services/retrieval/src ./src
+RUN gradle --no-daemon bootJar
+
+FROM eclipse-temurin:21-jre
+# curl is used by the compose healthcheck
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --system appuser
+WORKDIR /app
+COPY --from=build /build/build/libs/*.jar app.jar
+USER appuser
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "app.jar"]
