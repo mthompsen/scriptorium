@@ -5,11 +5,12 @@ from sqlalchemy import create_engine
 
 # Single source of connection truth: the DATABASE_URL environment variable
 # (twelve-factor, DESIGN.md Section 11). The default targets the local
-# compose stack from the host.
+# compose stack from the host. The canonical form is plain postgresql://
+# (what psycopg consumes); SQLAlchemy needs the +psycopg driver marker.
 DATABASE_URL = os.environ.get(
     "DATABASE_URL",
-    "postgresql+psycopg://scriptorium:scriptorium-dev@localhost:5432/scriptorium",
-)
+    "postgresql://scriptorium:scriptorium-dev@localhost:5432/scriptorium",
+).replace("postgresql://", "postgresql+psycopg://", 1)
 
 config = context.config
 

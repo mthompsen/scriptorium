@@ -25,7 +25,9 @@ DEMO_PASSWORD = "scriptorium-demo"
 
 def upgrade() -> None:
     conn = op.get_bind()
-    conn.execute(text("INSERT INTO roles (name) VALUES ('owner'), ('admin'), ('member'), ('viewer')"))
+    conn.execute(
+        text("INSERT INTO roles (name) VALUES ('owner'), ('admin'), ('member'), ('viewer')")
+    )
     conn.execute(
         text("INSERT INTO tenants (id, name) VALUES (:id, 'Demo Tenant')"),
         {"id": DEMO_TENANT_ID},
