@@ -37,9 +37,24 @@ Section 15; stories are the concrete increments inside each. Status values:
 | Chat wired to the agent with persisted citations; frontend renders sources | done |
 | Retrieval eval: recall@5 = 1.0, MRR = 1.0 on the 10-query labeled set (`docs/eval.md`, real run) | done |
 
-## Epic M3 — Agentic layer *(todo)*
+## Epic M3 — Agentic layer *(done — 2026-07-13)*
 
-Tool-use loop · tool set · guardrails · SSE streaming · full run/step tracing.
+| Story | Status |
+|---|---|
+| Provider streaming (`chat_stream`: Ollama NDJSON, Bedrock converse_stream) | done |
+| Tool registry: search_documents, get_document, list_recent, query_knowledge_graph (M4 stub) — schema-validated, tenant-scoped | done |
+| Bounded loop: step + wall-clock budgets, forced refusals, citation validation, PII hook (ADR-0005) | done |
+| Full run/step tracing to `agent_runs`/`agent_steps`, linked to chat messages | done |
+| SSE streaming end to end: agent → BFF → browser, live tool trace in chat UI | done |
+| Generation eval: citation coverage + LLM-judge groundedness (`docs/eval.md`) | done |
+
+## Tech debt / discovered work
+
+| Item | Found | Notes |
+|---|---|---|
+| Checksum-based upload dedup + versioning | M3 eval | Re-uploading an identical file creates a new `documents` row; the schema already carries `checksum` and `version`, ingest should reuse/increment instead. Duplicates degrade retrieval ranking. |
+| Eval isolation | M3 eval | `run-eval.ps1` now resets the eval tenant's corpus directly against the local stores; a document-delete API (or per-run tenants) would make this first-class. |
+| In-process ingest worker can strand `processing` on crash | M2 (ADR-0004) | Durable queue + outbox arrives with the event-driven path (M6). |
 
 ## Epic M4 — Polyglot + graph *(todo)*
 

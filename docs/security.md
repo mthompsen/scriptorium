@@ -3,6 +3,24 @@
 Scope and intent are defined in `docs/DESIGN.md` Section 12. This document
 grows with the system; the full threat model and DevSecOps pipeline land in M5.
 
+## Controls in place (M3) — GenAI guardrails (Section 9.2)
+
+- Bounded agent loop: hard step budget (`AGENT_MAX_STEPS`) and wall-clock
+  timeout (`AGENT_TIMEOUT_S`); breaching either forces a refusal recorded as
+  a `refused` run.
+- Tool allowlist: four typed tools; inputs validated against JSON Schemas
+  (`additionalProperties: false`) before execution; unknown tools rejected.
+- Tenant scope injected server-side into every tool call — the model cannot
+  name or widen a tenant.
+- Prompt-injection posture: retrieved content is delimited and framed as
+  data; tools take no free-form executable input.
+- Output validation: citations must resolve to chunks surfaced in the same
+  run; unresolved citations are stripped and counted; runs that retrieved
+  nothing refuse rather than answer from parametric memory.
+- Pluggable PII filter on the answer path (`PII_FILTER=basic|off`).
+- Observability: every run and step traced to `agent_runs`/`agent_steps`
+  with token counts and latency (Section 9.5).
+
 ## Controls in place (M1)
 
 - AuthN: JWT issued by the BFF (30-min expiry), bcrypt password hashes.
