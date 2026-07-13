@@ -26,6 +26,16 @@ services:
       dockerfile: infra/docker/Dockerfile.bff
     ports:
       - "3001:3001"
+    environment:
+      DATABASE_URL: postgresql://scriptorium:${POSTGRES_PASSWORD:-scriptorium-dev}@postgres:5432/scriptorium
+      JWT_SECRET: ${JWT_SECRET:-dev-only-secret-change-me}
+      INGESTION_URL: http://ingestion:8001
+      FRONTEND_ORIGIN: http://localhost:3000
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      ingestion:
+        condition: service_healthy
     healthcheck:
       # 127.0.0.1, not localhost: same busybox/IPv6 pitfall as the frontend
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3001/health"]
@@ -33,12 +43,33 @@ services:
       timeout: 5s
       retries: 5
 
+  # One-shot schema owner: Alembic from the ingestion image (ADR-0002).
+  migrate:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.ingestion
+    command: ["alembic", "upgrade", "head"]
+    environment:
+      DATABASE_URL: postgresql://scriptorium:${POSTGRES_PASSWORD:-scriptorium-dev}@postgres:5432/scriptorium
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
   ingestion:
     build:
       context: ../..
       dockerfile: infra/docker/Dockerfile.ingestion
     ports:
       - "8001:8001"
+    environment:
+      DATABASE_URL: postgresql://scriptorium:${POSTGRES_PASSWORD:-scriptorium-dev}@postgres:5432/scriptorium
+      MONGO_URL: mongodb://mongodb:27017
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      mongodb:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8001/health').status==200 else 1)"]
       interval: 10s
