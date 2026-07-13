@@ -1,0 +1,27 @@
+# Applies to all builds (build context is the repo root; Dockerfiles live in infra/docker/)
+.git
+.github
+docs
+infra/k8s
+infra/terraform
+infra/gitops
+Makefile
+*.local.md
+README.md
+
+# Dependency and build output — never sent to the daemon
+**/node_modules
+**/dist
+**/.next
+**/out
+**/coverage
+**/__pycache__
+**/.venv
+**/.pytest_cache
+**/.ruff_cache
+**/build
+**/.gradle
+
+# Secrets
+**/.env
+**/.env.local

@@ -1,0 +1,30 @@
+# Node
+node_modules/
+dist/
+.next/
+out/
+coverage/
+npm-debug.log*
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# JVM
+build/
+.gradle/
+
+# Env & secrets
+.env
+.env.local
+.env.*.local
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
