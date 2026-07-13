@@ -54,4 +54,4 @@ try {
   Write-Host "   OK 401 without token"
 }
 
-Write-Host "`nM1 smoke: ALL CHECKS PASSED" -ForegroundColor Green
+Write-Host "`nSmoke: ALL CHECKS PASSED" -ForegroundColor Green

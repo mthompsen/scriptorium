@@ -26,11 +26,16 @@ Section 15; stories are the concrete increments inside each. Status values:
 | Next.js login, chat, and library pages (Tailwind) | done |
 | End-to-end verified: login → upload → message on compose stack (`scripts/e2e-smoke.ps1`) | done |
 
-## Epic M2 — RAG core *(todo)*
+## Epic M2 — RAG core *(done — 2026-07-13)*
 
-Ingestion pipeline (parse/chunk/embed/index) · hybrid retrieval · grounded
-cited answers · LLM layer (Ollama + Bedrock adapters) · retrieval eval
-(recall@k in `docs/eval.md`).
+| Story | Status |
+|---|---|
+| `packages/llm`: provider protocol + Ollama and Bedrock adapters (ADR-0004) | done |
+| Ingestion pipeline: parse (PDF/DOCX/MD/HTML/txt) → structure-aware chunk → Mongo → embed → per-tenant OpenSearch index | done |
+| Hybrid retrieval (BM25 + kNN, RRF fusion) in the Spring Boot service | done |
+| Agent `/answer`: single-shot grounded RAG, citation validation, refusal on empty retrieval | done |
+| Chat wired to the agent with persisted citations; frontend renders sources | done |
+| Retrieval eval: recall@5 = 1.0, MRR = 1.0 on the 10-query labeled set (`docs/eval.md`, real run) | done |
 
 ## Epic M3 — Agentic layer *(todo)*
 

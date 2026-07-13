@@ -18,6 +18,11 @@ native Windows, invoke `docker compose` directly as above.
 Demo login (dev-only, seeded by migration 0004): `demo@scriptorium.local` /
 `scriptorium-demo` at http://localhost:3000/login.
 
+First start pulls the local models (~2.3 GB: `nomic-embed-text` +
+`llama3.2:3b`) into the ollama volume via the `ollama-init` one-shot;
+subsequent starts are instant. Answers run on CPU and can take up to a
+minute. `scripts/run-eval.ps1` reproduces the numbers in `docs/eval.md`.
+
 An end-to-end API smoke test lives at `scripts/e2e-smoke.ps1`
 (login → upload → status → chat → authz check).
 
