@@ -5,5 +5,13 @@ protocol with Adapter/Strategy implementations for AWS Bedrock, Azure OpenAI,
 Google Vertex, and Ollama (local laptop mode). Consumed by the ingestion and
 agent services.
 
-**Status:** placeholder. The provider interface and the Ollama + Bedrock
-adapters land in M2.
+**Status:** Ollama and Bedrock adapters implemented (M2). Azure OpenAI and
+Vertex adapters arrive with the cloud milestones.
+
+Selection is by environment (`LLM_PROVIDER=ollama|bedrock`; see
+`factory.py` for the model/env knobs). Bedrock needs the `[bedrock]` extra.
+
+Consumers (ingestion, agent) install this package by path — locally
+`pip install -e packages/llm`, in Docker/CI an explicit install step before
+the service — because Python path dependencies aren't portable inside a
+service's own pyproject.

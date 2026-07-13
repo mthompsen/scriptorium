@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "scriptorium-llm"
+version = "0.1.0"
+description = "Provider-agnostic LLM layer: Ollama, AWS Bedrock (Azure/Vertex arrive later)"
+requires-python = ">=3.12"
+dependencies = [
+    "requests>=2.32",
+]
+
+[project.optional-dependencies]
+bedrock = ["boto3>=1.34"]
+dev = [
+    "pytest>=8",
+    "ruff>=0.5",
+    "boto3>=1.34",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
