@@ -1,0 +1,16 @@
+{
+  "description": "Labeled retrieval eval set (DESIGN.md Section 9.4). Each query names the corpus file that contains the answer; the runner resolves filenames to document ids at upload time.",
+  "k": 5,
+  "queries": [
+    { "query": "How many days of paid time off do employees get per year?", "expected_file": "employee-handbook.md" },
+    { "query": "How many days per week can I work remotely?", "expected_file": "employee-handbook.md" },
+    { "query": "How long is parental leave and is it paid?", "expected_file": "employee-handbook.md" },
+    { "query": "What is the minimum password length?", "expected_file": "security-policy.md" },
+    { "query": "How quickly must a suspected security incident be reported?", "expected_file": "security-policy.md" },
+    { "query": "Is multi-factor authentication required for production access?", "expected_file": "security-policy.md" },
+    { "query": "What equipment do new hires receive before starting?", "expected_file": "onboarding-guide.md" },
+    { "query": "Who is my onboarding buddy and what do they do?", "expected_file": "onboarding-guide.md" },
+    { "query": "What is the daily meal per diem when traveling for business?", "expected_file": "expense-policy.md" },
+    { "query": "Above what amount do expenses require a receipt?", "expected_file": "expense-policy.md" }
+  ]
+}

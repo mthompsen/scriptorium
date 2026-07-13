@@ -1,0 +1,51 @@
+# Retrieval eval runner (DESIGN.md Section 9.4): uploads the labeled corpus,
+# waits for indexing, then runs /eval/run and prints the metrics that go
+# into docs/eval.md. Usage: pwsh scripts/run-eval.ps1
+$ErrorActionPreference = 'Stop'
+$bffBase = 'http://localhost:3001/api/v1'
+$agentBase = 'http://localhost:8002'
+$evalDir = Join-Path $PSScriptRoot '..\services\agent\eval'
+
+Write-Host "1) login"
+Invoke-RestMethod -Uri "$bffBase/auth/login" -Method Post -ContentType 'application/json' `
+  -Body (@{ email = 'demo@scriptorium.local'; password = 'scriptorium-demo' } | ConvertTo-Json) `
+  -SessionVariable session | Out-Null
+
+Write-Host "2) upload corpus"
+$docIds = @{}
+foreach ($file in Get-ChildItem (Join-Path $evalDir 'corpus') -Filter *.md) {
+  $doc = Invoke-RestMethod -Uri "$bffBase/documents" -Method Post -WebSession $session -Form @{ file = $file }
+  $docIds[$file.Name] = $doc.id
+  Write-Host "   $($file.Name) -> $($doc.id)"
+}
+
+Write-Host "3) wait for indexing"
+$deadline = (Get-Date).AddMinutes(10)
+foreach ($name in $docIds.Keys) {
+  while ($true) {
+    $status = (Invoke-RestMethod -Uri "$bffBase/documents/$($docIds[$name])/status" -WebSession $session).status
+    if ($status -eq 'indexed') { Write-Host "   $name indexed"; break }
+    if ($status -eq 'failed') { throw "$name failed to index" }
+    if ((Get-Date) -gt $deadline) { throw "timed out waiting for $name (status=$status)" }
+    Start-Sleep -Seconds 3
+  }
+}
+
+Write-Host "4) run retrieval eval"
+$dataset = Get-Content (Join-Path $evalDir 'queries.json') -Raw | ConvertFrom-Json
+$queries = @($dataset.queries | ForEach-Object {
+  @{ query = $_.query; expected_document_id = $docIds[$_.expected_file] }
+})
+$body = @{
+  tenant_id = '11111111-1111-4111-8111-111111111111'
+  k         = $dataset.k
+  queries   = $queries
+} | ConvertTo-Json -Depth 5
+$result = Invoke-RestMethod -Uri "$agentBase/eval/run" -Method Post -ContentType 'application/json' -Body $body
+
+Write-Host "`n=== Retrieval eval results ===" -ForegroundColor Green
+Write-Host ("recall@{0} = {1}   MRR = {2}   ({3} queries)" -f $result.k, $result.recall_at_k, $result.mrr, $result.query_count)
+$result.per_query | ForEach-Object {
+  $rank = if ($null -eq $_.first_relevant_rank) { 'MISS' } else { "rank $($_.first_relevant_rank)" }
+  Write-Host ("  {0,-62} {1}" -f $_.query, $rank)
+}
