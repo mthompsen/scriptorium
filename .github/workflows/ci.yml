@@ -1,0 +1,64 @@
+# CI for M0: lint + unit tests per service.
+# The full DevSecOps pipeline (SAST, scans, SBOM, signing) lands in M5 (DESIGN.md Section 14.1).
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  node:
+    name: ${{ matrix.dir }} (node)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dir: [services/bff, frontend]
+    defaults:
+      run:
+        working-directory: ${{ matrix.dir }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ${{ matrix.dir }}/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+
+  python:
+    name: ${{ matrix.dir }} (python)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dir: [services/ingestion, services/agent]
+    defaults:
+      run:
+        working-directory: ${{ matrix.dir }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[dev]"
+      - run: ruff check .
+      - run: pytest -q
+
+  java:
+    name: services/retrieval (java)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/retrieval
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.14"
+      - run: gradle --no-daemon test
