@@ -3,7 +3,9 @@
 # into docs/eval.md. Usage: pwsh scripts/run-eval.ps1
 $ErrorActionPreference = 'Stop'
 $bffBase = 'http://localhost:3001/api/v1'
-$agentBase = 'http://localhost:8002'
+# EVAL_AGENT_BASE lets the eval target a host-run agent process (e.g. the
+# cli provider, which needs the host CLI) instead of the container.
+$agentBase = if ($env:EVAL_AGENT_BASE) { $env:EVAL_AGENT_BASE } else { 'http://localhost:8002' }
 $evalDir = Join-Path $PSScriptRoot '..\services\agent\eval'
 
 $tenantId = '11111111-1111-4111-8111-111111111111'
