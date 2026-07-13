@@ -101,6 +101,25 @@ def test_unresolved_citations_are_stripped() -> None:
     assert final["stripped_citations"] == 1
 
 
+def test_document_uuid_citations_are_stripped_and_counted() -> None:
+    llm = ScriptedLLM(
+        [
+            search_turn(),
+            final_turn(
+                "Leave is 16 weeks [ab864c12-ff9c-474a-b7c9-01a64ce43ad4]. "
+                "PTO is 25 days [ab12cd34-0]."
+            ),
+        ]
+    )
+
+    final = run_events(build_loop(llm))[-1].data
+
+    assert "ab864c12-ff9c" not in final["answer"]
+    assert "[ab12cd34-0]" in final["answer"]
+    assert final["stripped_citations"] == 1
+    assert [c["chunk_id"] for c in final["citations"]] == ["ab12cd34-0"]
+
+
 def test_answer_without_any_retrieval_is_refused() -> None:
     trace = FakeTrace()
     llm = ScriptedLLM([final_turn("Paris is the capital of France.")])
