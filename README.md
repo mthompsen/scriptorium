@@ -107,7 +107,8 @@ fast. When all containers are healthy:
 
 | URL | What | Credentials |
 |---|---|---|
-| http://localhost:3000 | Frontend (chat, library, graph, admin) | `demo@scriptorium.local` / `scriptorium-demo` |
+| http://localhost:3000 | Frontend (chat, library, graph, admin) | `demo@scriptorium.local` / `scriptorium-demo` (role: owner) |
+| http://localhost:3000 | Same, as a read-only user | `viewer@scriptorium.local` / `scriptorium-view` (role: viewer — denied document upload) |
 | http://localhost:8080/legacy/admin/ | Legacy admin console (JSP) | `admin` / `scriptorium-dev` (HTTP Basic) |
 | http://localhost:3001/health | BFF health | — |
 
