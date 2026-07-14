@@ -107,7 +107,7 @@ pipeline.** Triage of its alerts:
 | # | Alert | Severity | Location | Status |
 |---|---|---|---|---|
 | 2 | `java/spring-disabled-csrf-protection` | error | `services/retrieval/.../legacyadmin/LegacyAdminSecurityConfig.java:45` | **Dismissed — false positive** |
-| 1 | `js/xss-through-exception` | warning | `services/bff/src/chat/chat.controller.ts:67` | **Fixed** |
+| 1 | `js/xss-through-exception` | warning | `services/bff/src/chat/chat.controller.ts:67` | **Fixed in code; alert dismissed** |
 
 - **#2 CSRF (dismissed, false positive).** The `csrf.disable()` is on the
   internal service-to-service chain (`@Order(2)`): `permitAll()`, no cookies,
@@ -132,6 +132,13 @@ pipeline.** Triage of its alerts:
   surfaces `.message` only for our own `instanceof HttpException` (safe
   constants) and falls back to the generic `'stream failed'` for everything
   else, with the original error logged server-side so debuggability is kept.
+  **Both facts hold:** the code was fixed (commit `6143072`), *and* the alert
+  was dismissed as "won't fix" — CodeQL re-flagged the narrowed path on the
+  post-fix commit `dd1d56e` (its taint model still treats `res.write` of any
+  exception `.message` as an HTML sink, even though this response is
+  `text/event-stream`, JSON-encoded, over POST, and now only carries
+  server-authored `HttpException` constants). The dismissal records that the
+  remaining match is the modeling limitation, not a live risk.
 
 ## Gate configuration
 

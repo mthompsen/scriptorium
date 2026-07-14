@@ -471,7 +471,7 @@ Example schema (`search_documents`):
 - Hard step budget and wall-clock timeout per run.
 - Tool allowlist; inputs validated against schema before execution.
 - Tenant scope injected server-side into every tool call; the model cannot widen it.
-- Prompt-injection mitigation: retrieved content is clearly delimited and treated as data, never as instructions; tools never take free-form executable input; graph queries are parameterized templates only.
+- Prompt-injection mitigation: a system-prompt instruction directs the model to treat tool results as data and ignore any instructions embedded in them (`services/agent/.../loop.py`); tools never take free-form executable input; graph queries are parameterized templates only. This is a prompt-level mitigation, not structural delimiting of untrusted content.
 - Output validation: citations must resolve to real chunks in the tenant; unresolved citations are stripped and flagged.
 - PII and content policy hook (pluggable filter) on both ingestion and answer paths.
 
@@ -532,7 +532,7 @@ Next.js App Router, React, TypeScript, Tailwind. Responsive and accessible (sema
 
 **Config.** Twelve-factor: all config via environment, no secrets in code, `.env.example` documents every variable. Secrets from the cloud secret manager in deployed mode; gitleaks guards against accidental commits (RP3).
 
-**Resilience.** Circuit breakers on inter-service calls, timeouts everywhere, idempotent ingestion, graceful degradation (if the graph is down, retrieval falls back to vector-only and says so).
+**Resilience.** Request timeouts on inter-service calls (e.g. the BFF agent client's `AbortSignal.timeout`), idempotent ingestion, and graceful degradation (if the graph is down, the retrieval service falls back to vector-only and reports the reduced mode). No circuit breaker is implemented; a per-call timeout plus the hybrid-only fallback covers the one dependency that can be degraded.
 
 ---
 
@@ -546,7 +546,7 @@ A lightweight threat model plus a concrete control list. This section plus the p
 - AuthZ enforced server-side; no trust in client-supplied tenant or role.
 - Security headers (CSP, HSTS, X-Content-Type-Options, frame options) at the edge.
 - Rate limiting and request size limits at the BFF.
-- Secrets never logged; structured logs scrub sensitive fields.
+- Secrets are kept out of logs by practice (no secret values are logged in the current code). Structured field-level log scrubbing is aspirational — not yet implemented.
 - The GenAI-specific controls in Section 9.2 (prompt-injection handling, tool allowlisting, output validation).
 
 **Supply chain and pipeline controls (DevSecOps, GitOps, RP3).**

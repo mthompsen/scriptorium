@@ -6,8 +6,10 @@ grows with the system; the full threat model and DevSecOps pipeline land in M5.
 ## Controls in place (M5) — DevSecOps pipeline
 
 - SAST: Semgrep (`p/default` community + custom `.semgrep.yml` rules —
-  parameterized-Cypher-only, no-tenant-from-request-body); CodeQL wired but
-  visibility-gated (private-repo GHAS limit, ADR-0007).
+  parameterized-Cypher-only, no-tenant-from-request-body); CodeQL runs live
+  on `main` since the repo went public (all three languages, buildless
+  `build-mode: none`; ADR-0007). CodeQL reports to GitHub code scanning and
+  does not gate CI — see `docs/security-findings.md` for alert triage.
 - Dependency + container scanning: Trivy (HIGH/CRITICAL, `--ignore-unfixed`,
   gating) on lockfiles and every built image; Dependabot for update PRs.
 - Secret scanning: gitleaks in CI and as a pre-commit hook.
@@ -39,8 +41,11 @@ grows with the system; the full threat model and DevSecOps pipeline land in M5.
   (`additionalProperties: false`) before execution; unknown tools rejected.
 - Tenant scope injected server-side into every tool call — the model cannot
   name or widen a tenant.
-- Prompt-injection posture: retrieved content is delimited and framed as
-  data; tools take no free-form executable input.
+- Prompt-injection posture: a system-prompt instruction tells the model to
+  treat tool results as data and ignore any instructions embedded in them
+  (`services/agent/.../loop.py`); tools take no free-form executable input.
+  This is a prompt-level mitigation, not structural delimiting of untrusted
+  content.
 - Output validation: citations must resolve to chunks surfaced in the same
   run; unresolved citations are stripped and counted; runs that retrieved
   nothing refuse rather than answer from parametric memory.
