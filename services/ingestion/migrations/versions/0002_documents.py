@@ -1,4 +1,4 @@
-"""documents registry (DESIGN.md Section 8.1)
+"""documents registry (ARCHITECTURE.md Section 8.1)
 
 Revision ID: 0002
 Revises: 0001

@@ -1,6 +1,6 @@
 # AI evaluation — methodology and results
 
-Methodology is defined in `docs/DESIGN.md` Section 9.4. The labeled set lives
+Methodology is defined in `docs/ARCHITECTURE.md` Section 9.4. The labeled set lives
 in `services/agent/eval/` (4 fictional corporate documents, 10 queries each
 labeled with the document containing the answer). `scripts/run-eval.ps1`
 **resets the eval tenant's corpus**, uploads it fresh, waits for indexing,

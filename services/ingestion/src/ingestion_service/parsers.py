@@ -1,4 +1,4 @@
-"""Format parsers: bytes -> structured blocks (DESIGN.md Section 9.1).
+"""Format parsers: bytes -> structured blocks (ARCHITECTURE.md Section 9.1).
 
 Every parser produces the same shape — a list of Blocks carrying the heading
 path they sit under — so the chunker can stay structure-aware without caring

@@ -1,4 +1,4 @@
-"""MongoDB chunk store (DESIGN.md Section 8.2)."""
+"""MongoDB chunk store (ARCHITECTURE.md Section 8.2)."""
 
 from pymongo import MongoClient
 

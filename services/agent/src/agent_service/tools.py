@@ -1,4 +1,4 @@
-"""The agent's tool set (DESIGN.md Section 9.2).
+"""The agent's tool set (ARCHITECTURE.md Section 9.2).
 
 Every tool is a typed, allowlisted function: inputs are validated against a
 JSON Schema before execution, and the tenant scope is injected server-side —

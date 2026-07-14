@@ -5,7 +5,7 @@
 
 ## Context
 
-M3 (DESIGN.md Section 15) delivers the bounded tool-use loop with guardrails,
+M3 (ARCHITECTURE.md Section 15) delivers the bounded tool-use loop with guardrails,
 token streaming, and full run tracing. The spec leaves open how streaming is
 carried end to end, how a trace row links to the chat message that does not
 yet exist while the run executes, what `query_knowledge_graph` does before

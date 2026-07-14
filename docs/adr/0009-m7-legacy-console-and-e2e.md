@@ -5,7 +5,7 @@
 
 ## Context
 
-M7 (DESIGN.md Section 15) adds the JSP + jQuery + Bootstrap legacy admin
+M7 (ARCHITECTURE.md Section 15) adds the JSP + jQuery + Bootstrap legacy admin
 console to the Spring Boot retrieval service (RP5), an accessibility and
 responsive pass, Playwright end-to-end journeys, and the reviewer-facing
 README. The spec fixes the console's location (`src/main/webapp/`, Section 6)

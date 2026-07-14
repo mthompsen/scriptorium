@@ -60,7 +60,7 @@ export default function AdminPage() {
         <p className="mt-2 text-sm text-amber-900">
           Corpus and tenant administration runs in a separate, deliberately old-style console —
           server-rendered JSP with jQuery and Bootstrap, served by the retrieval service. It is
-          kept as an honest mixed-technology integration exercise (see DESIGN.md §10) and asks
+          kept as an honest mixed-technology integration exercise (see ARCHITECTURE.md §10) and asks
           for its own credentials (HTTP Basic; dev default <code>admin / scriptorium-dev</code>).
         </p>
         <a

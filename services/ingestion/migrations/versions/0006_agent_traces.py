@@ -1,4 +1,4 @@
-"""agent run/step tracing (DESIGN.md Sections 8.1 and 9.5)
+"""agent run/step tracing (ARCHITECTURE.md Sections 8.1 and 9.5)
 
 Revision ID: 0006
 Revises: 0005

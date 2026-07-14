@@ -2,7 +2,7 @@
   "name": "@scriptorium/e2e",
   "version": "0.1.0",
   "private": true,
-  "description": "Playwright end-to-end journeys against the docker-compose stack (DESIGN.md Section 13)",
+  "description": "Playwright end-to-end journeys against the docker-compose stack (ARCHITECTURE.md Section 13)",
   "scripts": {
     "test": "playwright test",
     "report": "playwright show-report"

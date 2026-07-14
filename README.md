@@ -11,9 +11,9 @@ the [requirements traceability](#requirements-traceability) tables below map
 every line of that role's requirements to a concrete part of the system. The
 polyglot breadth (three backend stacks, five datastores) is deliberate
 resume-coverage and is discussed honestly in
-[DESIGN.md Appendix B](docs/DESIGN.md#19-appendix-b--scope-and-honesty-note).
+[ARCHITECTURE.md Appendix B](docs/ARCHITECTURE.md#18-appendix-b--scope-and-honesty-note).
 
-**Authoritative spec:** [docs/DESIGN.md](docs/DESIGN.md).
+**Authoritative spec:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 **Milestone status: M0–M7 complete** (Section 15 delivery plan) — with the
 environment-bound limitations listed in
 [What runs live vs. what is authored](#what-runs-live-vs-what-is-authored--validated),
@@ -23,7 +23,7 @@ which is worth reading before you assume anything runs somewhere.
 
 The write path (documents → indexed, graph-linked knowledge) is separated
 from the read/reason path (questions → grounded answers): a real
-command/query split (DESIGN.md Section 4).
+command/query split (ARCHITECTURE.md Section 4).
 
 ```mermaid
 flowchart TB
@@ -113,7 +113,7 @@ fast. When all containers are healthy:
 
 All credentials are dev-only compose defaults; see
 `infra/docker/.env.example`. Auth is email/password JWT for the demo — a
-production deployment would federate SSO (DESIGN.md Section 11).
+production deployment would federate SSO (ARCHITECTURE.md Section 11).
 
 **The ten-minute tour:** sign in → upload a document in **Library** and
 watch it reach `indexed` → ask about it in **Chat** and expand the agent's
@@ -150,7 +150,7 @@ Also in [docs/screenshots/](docs/screenshots/): the
 
 ## Requirements traceability
 
-The spine of the project (DESIGN.md Section 2): every required and preferred
+The spine of the project (ARCHITECTURE.md Section 2): every required and preferred
 qualification of the target role, mapped to where the codebase demonstrates
 it. Rows marked *candidate attribute* are credentials no program can
 demonstrate; they are listed for completeness.
@@ -161,9 +161,9 @@ demonstrate; they are listed for completeness.
 |---|---|---|---|
 | R1 | Bachelor's in CS or similar technical field | *Candidate attribute.* Whole system demonstrates applied CS: distributed systems, retrieval algorithms, graph modeling, ranking. | Pairs with the candidate's CS degree track. |
 | R2 | Full stack, frontend + backend, incl. Angular/React/Next.js and JS/TS/HTML5/CSS3 | `frontend/` | Next.js + React + TypeScript app: streaming chat, document library, knowledge-graph explorer, admin. HTML5 semantics + CSS3 via Tailwind, plus a Bootstrap-based legacy console (see RP5). |
-| R3 | Backend in Node.js, Python (Django/Flask), or Java (Spring Boot) | `services/bff` (Node), `services/ingestion` + `services/agent` (Python/Flask), `services/retrieval` (Java/Spring Boot) | All three stacks used deliberately, each with a distinct responsibility (DESIGN.md Section 7). |
+| R3 | Backend in Node.js, Python (Django/Flask), or Java (Spring Boot) | `services/bff` (Node), `services/ingestion` + `services/agent` (Python/Flask), `services/retrieval` (Java/Spring Boot) | All three stacks used deliberately, each with a distinct responsibility (ARCHITECTURE.md Section 7). |
 | R4 | Build and consume REST APIs; microservices or serverless in production | All `services/*`; `infra/terraform` | REST across every service with contract tests (Pact) between BFF and retrieval. Four-service microservice topology. Serverless ingestion trigger: S3 upload → Lambda → SQS — **proven end to end on LocalStack** (see status table). |
-| R5 | Relational DB + at least 1 NoSQL; Git; Azure DevOps or similar; Docker; Agile/Scrum; automated testing; CI/CD | Data layer + `infra/` + `.github/` + `azure-pipelines.yml` + `docs/backlog.md` | Postgres (relational); MongoDB and Redis (NoSQL). Git with Conventional Commits. CI/CD in GitHub Actions (executed) and an Azure DevOps mirror (authored — see status table). Docker for every service. Agile backlog per milestone. Test pyramid: unit, integration, contract, e2e, AI eval (DESIGN.md Section 13). |
+| R5 | Relational DB + at least 1 NoSQL; Git; Azure DevOps or similar; Docker; Agile/Scrum; automated testing; CI/CD | Data layer + `infra/` + `.github/` + `azure-pipelines.yml` + `docs/backlog.md` | Postgres (relational); MongoDB and Redis (NoSQL). Git with Conventional Commits. CI/CD in GitHub Actions (executed) and an Azure DevOps mirror (authored — see status table). Docker for every service. Agile backlog per milestone. Test pyramid: unit, integration, contract, e2e, AI eval (ARCHITECTURE.md Section 13). |
 | R6 | Develop/integrate/deploy AI, GenAI, or agentic AI in enterprise apps on AWS/Azure/GCP | `services/agent`, `services/ingestion`, `packages/llm`, `infra/terraform` | RAG pipeline + bounded agentic tool-use loop with guardrails, tracing, and an eval harness. Provider-agnostic LLM layer (Ollama local, Bedrock, Anthropic API). AWS target authored in Terraform with Bedrock IAM — validated, not applied (see status table). |
 | R7 | Ability to travel ~20% | *Candidate attribute.* | — |
 | R8 | Limited immigration sponsorship may be available | *Employer term.* | — |
@@ -203,7 +203,7 @@ it has actually executed.
 
 ## Evaluation results
 
-Methodology in DESIGN.md Section 9.4; full results and caveats in
+Methodology in ARCHITECTURE.md Section 9.4; full results and caveats in
 [docs/eval.md](docs/eval.md). Latest clean run on the 10-query labeled set:
 
 - **Retrieval** (hybrid BM25 + kNN, RRF): **recall@5 = 1.0, MRR = 1.0** —
@@ -254,4 +254,4 @@ validation, refusal on empty retrieval, PII filter hook.
 | `infra/docker` | Local compose stack |
 | `infra/terraform` | AWS stack + LocalStack serverless root |
 | `infra/k8s`, `infra/gitops` | Kustomize base/overlays, Kyverno policy, Argo CD apps |
-| `docs/` | DESIGN.md, ADRs 0001–0009, backlog, eval, security, runbook |
+| `docs/` | ARCHITECTURE.md, ADRs 0001–0009, backlog, eval, security, runbook |

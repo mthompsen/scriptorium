@@ -1,4 +1,4 @@
-"""Provider-agnostic LLM layer (DESIGN.md Section 9.3).
+"""Provider-agnostic LLM layer (ARCHITECTURE.md Section 9.3).
 
 Adapter/Strategy: services depend on the LLMProvider protocol; the concrete
 provider is selected by configuration, never imported directly.

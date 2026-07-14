@@ -1,4 +1,4 @@
-"""identity: tenants, users, roles, user_roles (DESIGN.md Section 8.1)
+"""identity: tenants, users, roles, user_roles (ARCHITECTURE.md Section 8.1)
 
 Revision ID: 0001
 Revises:

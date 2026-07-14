@@ -1,4 +1,4 @@
-# Custom Semgrep rules for Scriptorium (DESIGN.md Section 12: "custom +
+# Custom Semgrep rules for Scriptorium (ARCHITECTURE.md Section 12: "custom +
 # community rules"). CI also runs the community `p/default` ruleset; these
 # encode project-specific invariants the community rules don't cover.
 rules:
@@ -8,7 +8,7 @@ rules:
     message: >
       Build Cypher with parameters, never string interpolation. Tenant
       isolation and injection safety depend on parameterized queries
-      (DESIGN.md Sections 8.5 and 12).
+      (ARCHITECTURE.md Sections 8.5 and 12).
     patterns:
       - pattern-either:
           - pattern: $TX.run(f"...")
@@ -23,7 +23,7 @@ rules:
     severity: ERROR
     message: >
       Tenant scope must be derived server-side (from the JWT / injected
-      context), never read from the client request body (DESIGN.md
+      context), never read from the client request body (ARCHITECTURE.md
       Section 11). If this is an internal service boundary, refactor to
       accept the tenant as a validated path/parameter with a nosemgrep note.
     patterns:

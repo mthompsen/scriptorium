@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 /**
- * Legacy admin console (DESIGN.md Sections 7.3 and 10, RP5).
+ * Legacy admin console (ARCHITECTURE.md Sections 7.3 and 10, RP5).
  *
  * <p>Deliberately old-style: server-rendered JSP views with JSTL, Bootstrap
  * for layout, jQuery for in-page refresh against the small JSON API below.

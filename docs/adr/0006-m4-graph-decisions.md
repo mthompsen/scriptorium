@@ -5,7 +5,7 @@
 
 ## Context
 
-M4 (DESIGN.md Section 15) adds the knowledge graph: ingestion extracts
+M4 (ARCHITECTURE.md Section 15) adds the knowledge graph: ingestion extracts
 entities/relations into Neo4j (Section 8.5's model), the Spring Boot service
 hosts graph queries, the frontend renders an explorer, and contract tests
 prove BFF↔retrieval interoperability. The spec leaves open the extraction

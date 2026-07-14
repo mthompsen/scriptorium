@@ -5,7 +5,7 @@
 
 ## Context
 
-Milestone M2 (DESIGN.md Section 15) requires the real ingestion pipeline,
+Milestone M2 (ARCHITECTURE.md Section 15) requires the real ingestion pipeline,
 "retrieval service with hybrid search," cited answers in chat, and the LLM
 layer, but leaves four things open: where hybrid search lives given that M4
 names the Spring Boot service; where the M2 answer path runs given the agent

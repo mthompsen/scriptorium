@@ -1,5 +1,5 @@
 # Kyverno ClusterPolicy: admit only cosign-signed Scriptorium images in
-# staging/prod (DESIGN.md Section 12 supply-chain integrity, ADR-0007).
+# staging/prod (ARCHITECTURE.md Section 12 supply-chain integrity, ADR-0007).
 # Verification is keyless — the signature identity must be the GitHub Actions
 # workflow that built and signed the image, anchored to the Sigstore roots.
 apiVersion: kyverno.io/v1

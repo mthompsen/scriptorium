@@ -10,7 +10,7 @@ import { TenantContext } from '../auth/tenant-context';
 import { DocumentRow, DocumentsRepository } from './documents.repository';
 import { IngestionClient } from './ingestion.client';
 
-// Supported formats per DESIGN.md Section 3.2 (non-goals bound the list).
+// Supported formats per ARCHITECTURE.md Section 3.2 (non-goals bound the list).
 const ALLOWED_MIME_TYPES = new Set([
   'application/pdf',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',

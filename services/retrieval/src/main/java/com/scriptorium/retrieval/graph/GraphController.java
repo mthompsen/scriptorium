@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/** Graph query endpoints (DESIGN.md Section 7.3). */
+/** Graph query endpoints (ARCHITECTURE.md Section 7.3). */
 @RestController
 @Validated
 public class GraphController {

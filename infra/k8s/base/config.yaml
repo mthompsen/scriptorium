@@ -1,5 +1,5 @@
 # Non-secret service config. Secrets (JWT_SECRET, DB passwords) come from a
-# real secret manager in deployed mode (DESIGN.md Section 11); the committed
+# real secret manager in deployed mode (ARCHITECTURE.md Section 11); the committed
 # Secret here holds dev-only placeholders so the base builds standalone.
 apiVersion: v1
 kind: ConfigMap

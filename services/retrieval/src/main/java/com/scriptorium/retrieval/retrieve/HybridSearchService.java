@@ -5,7 +5,7 @@ import com.scriptorium.retrieval.opensearch.SearchGateway;
 import java.util.List;
 import org.springframework.stereotype.Service;
 
-/** Hybrid retrieval: BM25 + kNN fused with RRF (DESIGN.md Section 7.3). */
+/** Hybrid retrieval: BM25 + kNN fused with RRF (ARCHITECTURE.md Section 7.3). */
 @Service
 public class HybridSearchService {
 

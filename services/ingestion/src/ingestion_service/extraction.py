@@ -1,4 +1,4 @@
-"""Entity/relation extraction (DESIGN.md Section 9.1, ADR-0006).
+"""Entity/relation extraction (ARCHITECTURE.md Section 9.1, ADR-0006).
 
 Uses the configured LLM with a strict JSON instruction and defensive
 parsing: malformed output degrades to "no triples", never a failed document.

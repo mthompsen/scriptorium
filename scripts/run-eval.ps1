@@ -1,4 +1,4 @@
-# Retrieval eval runner (DESIGN.md Section 9.4): uploads the labeled corpus,
+# Retrieval eval runner (ARCHITECTURE.md Section 9.4): uploads the labeled corpus,
 # waits for indexing, then runs /eval/run and prints the metrics that go
 # into docs/eval.md. Usage: pwsh scripts/run-eval.ps1
 $ErrorActionPreference = 'Stop'

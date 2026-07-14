@@ -1,5 +1,5 @@
 # CI for M0: lint + unit tests per service.
-# The full DevSecOps pipeline (SAST, scans, SBOM, signing) lands in M5 (DESIGN.md Section 14.1).
+# The full DevSecOps pipeline (SAST, scans, SBOM, signing) lands in M5 (ARCHITECTURE.md Section 14.1).
 name: ci
 
 on:

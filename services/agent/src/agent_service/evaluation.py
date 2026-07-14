@@ -1,4 +1,4 @@
-"""Evaluation harness (DESIGN.md Section 9.4).
+"""Evaluation harness (ARCHITECTURE.md Section 9.4).
 
 Retrieval: recall@k and MRR over a labeled query set.
 Generation (M3, ADR-0005): citation coverage over answer sentences, and

@@ -1,4 +1,4 @@
-"""Scriptorium agent orchestrator — the reason path (DESIGN.md Section 7.4).
+"""Scriptorium agent orchestrator — the reason path (ARCHITECTURE.md Section 7.4).
 
 M3: bounded tool-use loop with guardrails behind POST /answer (SSE stream or
 JSON), full run/step tracing, and the eval harness behind POST /eval/run.

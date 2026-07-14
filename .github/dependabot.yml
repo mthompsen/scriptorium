@@ -1,4 +1,4 @@
-# Dependency update PRs (DESIGN.md Section 12). Grouped to keep review sane.
+# Dependency update PRs (ARCHITECTURE.md Section 12). Grouped to keep review sane.
 version: 2
 updates:
   - package-ecosystem: npm

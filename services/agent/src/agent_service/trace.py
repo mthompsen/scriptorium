@@ -1,4 +1,4 @@
-"""Run/step tracing to Postgres (DESIGN.md Sections 8.1 and 9.5)."""
+"""Run/step tracing to Postgres (ARCHITECTURE.md Sections 8.1 and 9.5)."""
 
 import json
 

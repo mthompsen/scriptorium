@@ -1,6 +1,6 @@
 """Integration test: real Postgres (with the real Alembic migrations) + real Mongo.
 
-Uses Testcontainers (DESIGN.md Section 13); requires a Docker daemon.
+Uses Testcontainers (ARCHITECTURE.md Section 13); requires a Docker daemon.
 """
 
 import io

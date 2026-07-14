@@ -1,4 +1,4 @@
-# Azure DevOps pipeline — mirrors the GitHub Actions stages (DESIGN.md
+# Azure DevOps pipeline — mirrors the GitHub Actions stages (ARCHITECTURE.md
 # Section 14.1, R5 "Azure DevOps or similar"). GitHub Actions is the
 # executing pipeline of record; this is authored and schema-valid but has no
 # ADO organization to run in (ADR-0007). Kept in sync when ci.yml /

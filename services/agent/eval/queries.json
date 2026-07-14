@@ -1,5 +1,5 @@
 {
-  "description": "Labeled retrieval eval set (DESIGN.md Section 9.4). Each query names the corpus file that contains the answer; the runner resolves filenames to document ids at upload time.",
+  "description": "Labeled retrieval eval set (ARCHITECTURE.md Section 9.4). Each query names the corpus file that contains the answer; the runner resolves filenames to document ids at upload time.",
   "k": 5,
   "queries": [
     { "query": "How many days of paid time off do employees get per year?", "expected_file": "employee-handbook.md" },

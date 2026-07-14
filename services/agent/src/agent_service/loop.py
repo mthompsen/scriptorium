@@ -1,4 +1,4 @@
-"""The bounded tool-use agent loop (DESIGN.md Section 9.2, ADR-0005).
+"""The bounded tool-use agent loop (ARCHITECTURE.md Section 9.2, ADR-0005).
 
 Guardrails enforced here:
 - hard step budget and wall-clock timeout per run (forced refusal on breach);

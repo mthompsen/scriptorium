@@ -5,7 +5,7 @@
 
 ## Context
 
-M6 (DESIGN.md Sections 14.5, 15) provisions the AWS target — VPC, EKS, RDS
+M6 (ARCHITECTURE.md Sections 14.5, 15) provisions the AWS target — VPC, EKS, RDS
 Postgres, OpenSearch, S3, SQS, Lambda, IAM, Bedrock access — with the
 serverless ingestion path (S3 → Lambda → SQS → ingestion worker) as the R4
 deliverable. The standing constraint for this milestone: author and validate

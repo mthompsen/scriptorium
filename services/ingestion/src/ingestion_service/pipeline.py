@@ -1,4 +1,4 @@
-"""The RAG write path (DESIGN.md Section 9.1): parse → chunk → store →
+"""The RAG write path (ARCHITECTURE.md Section 9.1): parse → chunk → store →
 embed → index → mark indexed. Runs on a background worker after /ingest
 accepts the raw bytes (ADR-0004)."""
 

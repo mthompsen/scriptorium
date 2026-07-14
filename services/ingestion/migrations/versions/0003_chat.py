@@ -1,4 +1,4 @@
-"""chat sessions and messages (DESIGN.md Section 8.1)
+"""chat sessions and messages (ARCHITECTURE.md Section 8.1)
 
 Revision ID: 0003
 Revises: 0002

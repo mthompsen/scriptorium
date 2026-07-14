@@ -1,4 +1,4 @@
-"""Structure-aware chunking (DESIGN.md Section 9.1).
+"""Structure-aware chunking (ARCHITECTURE.md Section 9.1).
 
 Chunks never cross a heading boundary; within a section, paragraphs
 accumulate to a target token budget with one paragraph of overlap carried

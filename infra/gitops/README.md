@@ -1,6 +1,6 @@
 # infra/gitops
 
-Argo CD `Application` manifests (DESIGN.md Section 14.4).
+Argo CD `Application` manifests (ARCHITECTURE.md Section 14.4).
 
 - `app-staging.yaml` — auto-synced (prune + self-heal) from
   `infra/k8s/overlays/staging`. The `gitops-bump` CI job rewrites that

@@ -5,7 +5,7 @@
 
 ## Context
 
-DESIGN.md Section 8.1 requires a single migration owner for the Postgres
+ARCHITECTURE.md Section 8.1 requires a single migration owner for the Postgres
 schema and explicitly leaves the choice open: "Flyway for the JVM service's
 schema, or a single migration owner such as Alembic driven from ingestion;
 pick one owner and record it in an ADR." Multiple services touch Postgres

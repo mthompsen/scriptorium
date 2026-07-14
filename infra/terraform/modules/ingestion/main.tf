@@ -1,4 +1,4 @@
-# Serverless ingestion path: S3 upload -> Lambda -> SQS (DESIGN.md 14.5).
+# Serverless ingestion path: S3 upload -> Lambda -> SQS (ARCHITECTURE.md 14.5).
 # Self-contained and LocalStack-provable (ADR-0008).
 
 data "aws_caller_identity" "current" {}

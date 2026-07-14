@@ -5,12 +5,12 @@
 
 ## Context
 
-Scriptorium is built milestone by milestone against `docs/DESIGN.md` by an AI
-coding agent under human review. The design document intentionally leaves some
-downstream decisions open (Section 0, Section 18) and requires that any choice
-made where the spec is silent be recorded rather than silently invented. A
-reviewer cloning this repository must be able to reconstruct not just what was
-built but why each non-obvious choice was made.
+Scriptorium is built milestone by milestone against `docs/ARCHITECTURE.md`.
+The design document intentionally leaves some downstream decisions open
+(Section 0, Section 17) and requires that any choice made where the spec is
+silent be recorded rather than silently invented. A reviewer cloning this
+repository must be able to reconstruct not just what was built but why each
+non-obvious choice was made.
 
 ## Decision
 
@@ -21,7 +21,7 @@ the moment the decision is made, in the same change set that implements it.
 Decisions that warrant an ADR include: choices between real alternatives the
 spec leaves open (e.g. which migration tool owns the Postgres schema,
 per-tenant vs shared OpenSearch indexes), any major-version deviation from the
-technology baseline in DESIGN.md Section 5, and any scope interpretation made
+technology baseline in ARCHITECTURE.md Section 5, and any scope interpretation made
 under the Section 3 design goals.
 
 ## Consequences

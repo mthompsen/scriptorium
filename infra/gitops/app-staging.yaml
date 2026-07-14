@@ -1,4 +1,4 @@
-# Argo CD Application: reconciles the staging overlay from Git (DESIGN.md
+# Argo CD Application: reconciles the staging overlay from Git (ARCHITECTURE.md
 # Section 14.4). Merges to main bump the overlay's image tags (GitOps CI
 # job); Argo CD syncs the cluster to match.
 apiVersion: argoproj.io/v1alpha1

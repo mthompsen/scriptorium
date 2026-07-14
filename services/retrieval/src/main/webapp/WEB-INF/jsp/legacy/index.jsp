@@ -19,7 +19,7 @@
   <div class="alert alert-warning" role="alert">
     <strong>Legacy surface.</strong> This console is served server-side (JSP) by the
     retrieval service and is integrated deliberately as a mixed-technology exercise
-    (DESIGN.md &sect;10). The modern admin UI lives in the Next.js app.
+    (ARCHITECTURE.md &sect;10). The modern admin UI lives in the Next.js app.
   </div>
 
   <div class="d-flex justify-content-between align-items-center mb-3">

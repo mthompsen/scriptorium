@@ -1,5 +1,5 @@
 # gitleaks configuration for Scriptorium.
-# CI wiring and the pre-commit hook land in M5 (DESIGN.md Section 12).
+# CI wiring and the pre-commit hook land in M5 (ARCHITECTURE.md Section 12).
 [extend]
 useDefault = true
 

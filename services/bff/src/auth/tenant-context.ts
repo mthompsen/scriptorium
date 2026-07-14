@@ -5,7 +5,7 @@ import type { AuthenticatedRequest } from './principal';
 
 /**
  * Request-scoped carrier of the tenant scope derived from the JWT
- * (DESIGN.md Section 7.1). Downstream services read tenant/user identity
+ * (ARCHITECTURE.md Section 7.1). Downstream services read tenant/user identity
  * from here, never from client-supplied values.
  */
 @Injectable({ scope: Scope.REQUEST })

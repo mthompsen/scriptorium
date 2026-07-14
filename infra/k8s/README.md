@@ -1,6 +1,6 @@
 # infra/k8s
 
-Kustomize `base/` plus `overlays/{dev,staging,prod}/` (DESIGN.md Section 14.3),
+Kustomize `base/` plus `overlays/{dev,staging,prod}/` (ARCHITECTURE.md Section 14.3),
 and a `policy/` Kyverno signed-image admission policy.
 
 ```sh

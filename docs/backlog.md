@@ -1,6 +1,6 @@
 # Scriptorium backlog
 
-Agile artifact for R5. Epics mirror the milestones in `docs/DESIGN.md`
+Agile artifact for R5. Epics mirror the milestones in `docs/ARCHITECTURE.md`
 Section 15; stories are the concrete increments inside each. Status values:
 `todo`, `in progress`, `done`.
 

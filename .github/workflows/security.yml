@@ -1,4 +1,4 @@
-# DevSecOps pipeline (DESIGN.md Sections 12, 14.1). Runs the scanners as
+# DevSecOps pipeline (ARCHITECTURE.md Sections 12, 14.1). Runs the scanners as
 # gates, then on main builds/scans/signs images. Findings gate: any
 # HIGH/CRITICAL (Trivy), ERROR (Semgrep), or secret (gitleaks) fails CI.
 name: security

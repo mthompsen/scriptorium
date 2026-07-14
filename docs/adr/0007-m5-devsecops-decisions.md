@@ -5,7 +5,7 @@
 
 ## Context
 
-M5 (DESIGN.md Sections 12, 14, 15) adds the security pipeline with a
+M5 (ARCHITECTURE.md Sections 12, 14, 15) adds the security pipeline with a
 findings gate, Kubernetes manifests, and GitOps. Several mechanics are
 unspecified, and two spec items collide with the realities of a private
 repository and a single-developer environment. The standing triage rule for

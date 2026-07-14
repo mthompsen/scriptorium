@@ -1,4 +1,4 @@
-# Scriptorium local stack (laptop mode, DESIGN.md Section 14.2).
+# Scriptorium local stack (laptop mode, ARCHITECTURE.md Section 14.2).
 # Run from the repo root:  docker compose -f infra/docker/docker-compose.yml up -d --build
 # All credentials below are dev-only defaults; override via .env (see .env.example).
 

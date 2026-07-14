@@ -1,4 +1,4 @@
-"""Neo4j adapter for the knowledge graph (DESIGN.md Section 8.5, ADR-0006).
+"""Neo4j adapter for the knowledge graph (ARCHITECTURE.md Section 8.5, ADR-0006).
 
 All Cypher is parameterized and tenant-filtered; no string-built queries.
 Writes are idempotent per document: re-ingest replaces the document's chunks

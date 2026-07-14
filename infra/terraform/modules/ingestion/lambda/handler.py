@@ -1,4 +1,4 @@
-"""S3 -> Lambda -> SQS ingestion trigger (DESIGN.md Sections 9.1, 14.5).
+"""S3 -> Lambda -> SQS ingestion trigger (ARCHITECTURE.md Sections 9.1, 14.5).
 
 An object landing in the raw-uploads bucket fires this Lambda, which enqueues
 one ingestion job per object onto the SQS queue the ingestion worker

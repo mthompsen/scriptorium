@@ -1,6 +1,6 @@
 # Security — threat model and control list
 
-Scope and intent are defined in `docs/DESIGN.md` Section 12. This document
+Scope and intent are defined in `docs/ARCHITECTURE.md` Section 12. This document
 grows with the system; the full threat model and DevSecOps pipeline land in M5.
 
 ## Controls in place (M5) — DevSecOps pipeline
