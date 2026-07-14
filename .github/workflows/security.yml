@@ -58,13 +58,26 @@ jobs:
     permissions:
       security-events: write
     strategy:
+      # One leg failing must not cancel the others — each language's
+      # analysis lands (or fails) on its own.
+      fail-fast: false
       matrix:
-        language: [javascript-typescript, python, java-kotlin]
+        include:
+          - language: python
+            build-mode: none
+          - language: javascript-typescript
+            build-mode: none
+          # build-mode none: the Gradle project is nested under
+          # services/retrieval with no root build file, so autobuild
+          # cannot compile it; buildless extraction analyzes the sources.
+          - language: java-kotlin
+            build-mode: none
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: github/codeql-action/init@99df26d4f13ea111d4ec1a7dddef6063f76b97e9 # v4.37.0
         with:
           languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
       - uses: github/codeql-action/analyze@99df26d4f13ea111d4ec1a7dddef6063f76b97e9 # v4.37.0
 
   terraform:
