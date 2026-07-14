@@ -1,0 +1,130 @@
+# DevSecOps pipeline (DESIGN.md Sections 12, 14.1). Runs the scanners as
+# gates, then on main builds/scans/signs images. Findings gate: any
+# HIGH/CRITICAL (Trivy), ERROR (Semgrep), or secret (gitleaks) fails CI.
+name: security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  semgrep:
+    name: sast (semgrep)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: semgrep scan (community + custom, gate on ERROR)
+        run: |
+          docker run --rm -v "$PWD:/src" -w /src semgrep/semgrep:latest \
+            semgrep scan --config p/default --config .semgrep.yml \
+            --error --severity ERROR
+
+  gitleaks:
+    name: secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0 # full history
+      - run: |
+          docker run --rm -v "$PWD:/repo" -w /repo ghcr.io/gitleaks/gitleaks:latest \
+            detect --source /repo --no-banner --redact
+
+  trivy-deps:
+    name: dependency scan (trivy fs)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: trivy filesystem scan (gate HIGH/CRITICAL)
+        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8 # master (pinned 2026-07-14)
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          ignore-unfixed: "true"
+          exit-code: "1"
+
+  codeql:
+    name: codeql (public repos only)
+    runs-on: ubuntu-latest
+    # CodeQL needs GitHub Advanced Security on private repos (ADR-0007).
+    # Gated on visibility so it activates when the repo goes public rather
+    # than failing red. Semgrep carries SAST while private.
+    if: ${{ !github.event.repository.private }}
+    permissions:
+      security-events: write
+    strategy:
+      matrix:
+        language: [javascript-typescript, python, java-kotlin]
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: github/codeql-action/init@02c5e83432fe5497fd85b873b6c9f16a8578e1d9 # v3
+        with:
+          languages: ${{ matrix.language }}
+      - uses: github/codeql-action/analyze@02c5e83432fe5497fd85b873b6c9f16a8578e1d9 # v3
+
+  images:
+    name: build, scan, sbom, sign (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    needs: [semgrep, gitleaks, trivy-deps]
+    permissions:
+      contents: read
+      packages: write # push to GHCR
+      id-token: write # cosign keyless (OIDC)
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { service: bff, dockerfile: infra/docker/Dockerfile.bff }
+          - { service: frontend, dockerfile: infra/docker/Dockerfile.frontend }
+          - { service: ingestion, dockerfile: infra/docker/Dockerfile.ingestion }
+          - { service: agent, dockerfile: infra/docker/Dockerfile.agent }
+          - { service: retrieval, dockerfile: infra/docker/Dockerfile.retrieval }
+    env:
+      IMAGE: ghcr.io/${{ github.repository_owner }}/scriptorium-${{ matrix.service }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: build image
+        run: docker build -f ${{ matrix.dockerfile }} -t "$IMAGE:${{ github.sha }}" .
+
+      - name: trivy image scan (gate HIGH/CRITICAL)
+        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8 # master (pinned 2026-07-14)
+        with:
+          image-ref: ${{ env.IMAGE }}:${{ github.sha }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: "true"
+          exit-code: "1"
+
+      - name: generate SBOM (syft)
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0
+        with:
+          image: ${{ env.IMAGE }}:${{ github.sha }}
+          format: spdx-json
+          output-file: sbom-${{ matrix.service }}.spdx.json
+          upload-artifact: true
+
+      # Everything below only runs on main: push and sign the image.
+      - name: log in to GHCR
+        if: github.ref == 'refs/heads/main'
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: push image
+        if: github.ref == 'refs/heads/main'
+        run: docker push "$IMAGE:${{ github.sha }}"
+
+      - name: install cosign
+        if: github.ref == 'refs/heads/main'
+        uses: sigstore/cosign-installer@d58896d6a1865668819e1d91763c7751a165e159 # v3.9.2
+
+      - name: cosign keyless sign
+        if: github.ref == 'refs/heads/main'
+        run: cosign sign --yes "$IMAGE:${{ github.sha }}"

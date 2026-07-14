@@ -1,0 +1,28 @@
+# Dependency update PRs (DESIGN.md Section 12). Grouped to keep review sane.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directories: ["/services/bff", "/frontend"]
+    schedule: { interval: weekly }
+    groups:
+      npm: { patterns: ["*"] }
+
+  - package-ecosystem: pip
+    directories: ["/services/ingestion", "/services/agent", "/packages/llm"]
+    schedule: { interval: weekly }
+    groups:
+      pip: { patterns: ["*"] }
+
+  - package-ecosystem: gradle
+    directory: "/services/retrieval"
+    schedule: { interval: weekly }
+    groups:
+      gradle: { patterns: ["*"] }
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule: { interval: weekly }
+
+  - package-ecosystem: docker
+    directory: "/infra/docker"
+    schedule: { interval: weekly }
