@@ -3,6 +3,16 @@
 Scope and intent are defined in `docs/DESIGN.md` Section 12. This document
 grows with the system; the full threat model and DevSecOps pipeline land in M5.
 
+## Controls in place (M4) — graph layer
+
+- All Cypher is parameterized with explicit `tenant_id` parameters on both
+  the Python (ingestion) and Java (retrieval) sides — no string-built
+  queries (Section 8.5).
+- The `query_knowledge_graph` tool takes an entity name only; graph queries
+  are fixed templates, never model-supplied Cypher (Section 9.2).
+- Graph outages degrade retrieval to hybrid-only with an explicit mode flag
+  rather than failing (Section 11).
+
 ## Controls in place (M3) — GenAI guardrails (Section 9.2)
 
 - Bounded agent loop: hard step budget (`AGENT_MAX_STEPS`) and wall-clock

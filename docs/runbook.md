@@ -23,6 +23,11 @@ First start pulls the local models (~2.3 GB: `nomic-embed-text` +
 subsequent starts are instant. Answers run on CPU and can take up to a
 minute. `scripts/run-eval.ps1` reproduces the numbers in `docs/eval.md`.
 
+Graph extraction (M4) runs per chunk during ingestion on the local model and
+adds minutes per document on CPU; set `GRAPH_EXTRACTION=off` to skip it.
+The explorer lives at http://localhost:3000/graph; the Neo4j browser at
+http://localhost:7474 (neo4j / scriptorium-dev).
+
 An end-to-end API smoke test lives at `scripts/e2e-smoke.ps1`
 (login → upload → status → chat → authz check).
 

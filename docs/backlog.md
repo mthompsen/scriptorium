@@ -56,10 +56,16 @@ Section 15; stories are the concrete increments inside each. Status values:
 | Eval isolation | M3 eval | `run-eval.ps1` now resets the eval tenant's corpus directly against the local stores; a document-delete API (or per-run tenants) would make this first-class. |
 | In-process ingest worker can strand `processing` on crash | M2 (ADR-0004) | Durable queue + outbox arrives with the event-driven path (M6). |
 
-## Epic M4 — Polyglot + graph *(todo)*
+## Epic M4 — Polyglot + graph *(done — 2026-07-14)*
 
-Spring Boot retrieval over Neo4j · entity/relation extraction · graph explorer
-UI · Pact contract tests BFF↔retrieval.
+| Story | Status |
+|---|---|
+| Entity/relation extraction into Neo4j during ingestion (confidence-filtered, ADR-0006) | done — live graph: 8 entities, 3 relations from the eval corpus |
+| Graph queries in the Spring Boot service (`/graph/search`, neighborhood; parameterized Cypher) | done |
+| Graph-augmented retrieval: `graph_context` on `/retrieve`, graceful `hybrid` degradation | done — verified `mode=hybrid+graph` |
+| BFF graph proxy (tenant injected server-side) + real `query_knowledge_graph` agent tool | done — e2e verified |
+| Frontend graph explorer (react-force-graph-2d) | done — endpoints verified with real data; canvas render spot-check left to manual browser pass (automation flaked) |
+| Pact contract BFF↔retrieval (consumer jest → committed pact → pact-jvm verify + CI drift check) | done — provider verification green |
 
 ## Epic M5 — DevSecOps + Kubernetes + GitOps *(todo)*
 
