@@ -32,6 +32,14 @@ infra/terraform/**/.build/
 .env.local
 .env.*.local
 
+# Playwright (e2e)
+e2e/test-results/
+e2e/playwright-report/
+
+# Build / scan artifacts
+*.tsbuildinfo
+.semgrep-report.json
+
 # OS / editor
 .DS_Store
 Thumbs.db

@@ -102,6 +102,7 @@ export default function GraphPage() {
             <li key={hit.id}>
               <button
                 onClick={() => explore(hit.id, hit.name)}
+                aria-pressed={selected === hit.name}
                 className={`rounded-full border px-3 py-1 text-xs font-medium hover:bg-slate-100 ${
                   selected === hit.name ? 'border-slate-900 bg-slate-100' : 'border-slate-300'
                 }`}
@@ -114,7 +115,13 @@ export default function GraphPage() {
       )}
 
       {data && (
-        <div className="h-[60vh] overflow-hidden rounded-md border border-slate-200 bg-white">
+        <div
+          role="img"
+          aria-label={`Knowledge graph neighborhood of ${selected ?? 'the selected entity'}: ${
+            data.nodes.length
+          } entities, ${data.links.length} relations. A text listing follows.`}
+          className="h-[60vh] overflow-hidden rounded-md border border-slate-200 bg-white"
+        >
           <ForceGraph2D
             graphData={data}
             nodeId="id"
@@ -128,6 +135,26 @@ export default function GraphPage() {
             }}
           />
         </div>
+      )}
+      {data && (
+        <ul className="sr-only">
+          {data.links.map((link, index) => {
+            // The force-graph library rewrites link ends from ids to node
+            // references once the simulation starts — resolve either shape.
+            const name = (end: unknown) => {
+              const id =
+                typeof end === 'object' && end !== null
+                  ? (end as { id: string }).id
+                  : String(end);
+              return data.nodes.find((node) => node.id === id)?.name ?? id;
+            };
+            return (
+              <li key={index}>
+                {name(link.source)} — {link.relation} → {name(link.target)}
+              </li>
+            );
+          })}
+        </ul>
       )}
     </section>
   );

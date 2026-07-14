@@ -103,7 +103,9 @@ export default function ChatPage() {
     <section className="flex h-[70vh] flex-col space-y-4">
       <h1 className="text-2xl font-semibold">Chat</h1>
       <div
+        role="log"
         aria-live="polite"
+        aria-label="Conversation"
         className="flex-1 space-y-3 overflow-y-auto rounded-md border border-slate-200 bg-white p-4"
       >
         {messages.length === 0 && (
@@ -138,8 +140,15 @@ export default function ChatPage() {
               </details>
             )}
             <p>
+              <span className="sr-only">
+                {message.role === 'user' ? 'You: ' : 'Assistant: '}
+              </span>
               {message.content}
-              {message.live && <span className="animate-pulse">▋</span>}
+              {message.live && (
+                <span aria-hidden="true" className="animate-pulse">
+                  ▋
+                </span>
+              )}
             </p>
             {message.citations?.length > 0 && (
               <details className="mt-2 border-t border-slate-300 pt-1 text-xs text-slate-600">

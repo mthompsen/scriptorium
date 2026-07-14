@@ -89,15 +89,25 @@ export default function LibraryPage() {
         </p>
       )}
 
-      <table className="w-full border-collapse text-left text-sm">
-        <thead>
-          <tr className="border-b border-slate-300 text-slate-600">
-            <th className="py-2 pr-4 font-medium">Title</th>
-            <th className="py-2 pr-4 font-medium">Type</th>
-            <th className="py-2 pr-4 font-medium">Status</th>
-            <th className="py-2 font-medium">Uploaded</th>
-          </tr>
-        </thead>
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse text-left text-sm">
+          <caption className="sr-only">Uploaded documents and their ingestion status</caption>
+          <thead>
+            <tr className="border-b border-slate-300 text-slate-600">
+              <th scope="col" className="py-2 pr-4 font-medium">
+                Title
+              </th>
+              <th scope="col" className="py-2 pr-4 font-medium">
+                Type
+              </th>
+              <th scope="col" className="py-2 pr-4 font-medium">
+                Status
+              </th>
+              <th scope="col" className="py-2 font-medium">
+                Uploaded
+              </th>
+            </tr>
+          </thead>
         <tbody>
           {documents.length === 0 && (
             <tr>
@@ -120,8 +130,9 @@ export default function LibraryPage() {
               <td className="py-2 text-slate-600">{new Date(doc.created_at).toLocaleString()}</td>
             </tr>
           ))}
-        </tbody>
-      </table>
+          </tbody>
+        </table>
+      </div>
     </section>
   );
 }

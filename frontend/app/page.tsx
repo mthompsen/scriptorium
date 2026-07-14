@@ -6,7 +6,9 @@ export default function Home() {
       <h1 className="text-2xl font-semibold">Scriptorium</h1>
       <p className="max-w-prose text-slate-700">
         Enterprise knowledge intelligence platform. Upload documents to the library, then ask
-        questions in chat. Answers are stubbed until the RAG core lands in M2.
+        questions in chat — a tool-using agent searches the corpus and the knowledge graph and
+        answers with citations. Explore extracted entities in the graph, and administer the
+        corpus from the admin page.
       </p>
       <div className="flex gap-3">
         <Link
