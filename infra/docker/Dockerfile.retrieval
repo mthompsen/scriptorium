@@ -3,7 +3,9 @@ FROM gradle:8.14-jdk21 AS build
 WORKDIR /build
 COPY services/retrieval/build.gradle services/retrieval/settings.gradle ./
 COPY services/retrieval/src ./src
-RUN gradle --no-daemon bootJar
+# bootWar, not bootJar: JSP (the RP5 legacy console) requires war packaging.
+# The boot war is still directly runnable with java -jar.
+RUN gradle --no-daemon bootWar
 
 FROM eclipse-temurin:21-jre
 # curl is used by the compose healthcheck. Also remove /usr/bin/pebble — a
@@ -15,7 +17,9 @@ RUN apt-get update \
     && rm -f /usr/bin/pebble \
     && useradd --system appuser
 WORKDIR /app
-COPY --from=build /build/build/libs/*.jar app.jar
+# Must keep the .war extension: Boot only exposes the archive's webapp
+# content (the JSP console) as the servlet document root for *.war files.
+COPY --from=build /build/build/libs/*.war app.war
 USER appuser
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "app.war"]

@@ -6,6 +6,8 @@ import com.scriptorium.retrieval.graph.GraphModels.GraphEdge;
 import com.scriptorium.retrieval.graph.GraphModels.GraphNode;
 import com.scriptorium.retrieval.graph.GraphModels.Neighborhood;
 import com.scriptorium.retrieval.graph.GraphModels.RelatedEntity;
+import com.scriptorium.retrieval.legacyadmin.GraphAdminPort;
+import com.scriptorium.retrieval.legacyadmin.LegacyAdminModels.GraphStats;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -23,7 +25,7 @@ import org.springframework.stereotype.Component;
  * tenant_id parameter — no string-built queries (Sections 8.5 and 12).
  */
 @Component
-public class Neo4jGraphStore implements GraphStore {
+public class Neo4jGraphStore implements GraphStore, GraphAdminPort {
 
     private final Driver driver;
 
@@ -118,6 +120,29 @@ public class Neo4jGraphStore implements GraphStore {
                             """,
                             Map.of("tenant_id", tenantId, "chunk_ids", chunkIds))
                     .list(Neo4jGraphStore::toContextEntry);
+        }
+    }
+
+    @Override
+    public GraphStats graphStats(String tenantId) {
+        try (Session session = driver.session()) {
+            long entities = session.run(
+                            "MATCH (e:Entity {tenant_id: $tenant_id}) RETURN count(e) AS n",
+                            Map.of("tenant_id", tenantId))
+                    .single()
+                    .get("n")
+                    .asLong();
+            long relations = session.run(
+                            """
+                            MATCH (:Entity {tenant_id: $tenant_id})
+                                  -[r:RELATED_TO]->(:Entity {tenant_id: $tenant_id})
+                            RETURN count(r) AS n
+                            """,
+                            Map.of("tenant_id", tenantId))
+                    .single()
+                    .get("n")
+                    .asLong();
+            return new GraphStats(entities, relations);
         }
     }
 

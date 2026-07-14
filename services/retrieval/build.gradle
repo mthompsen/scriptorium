@@ -1,5 +1,9 @@
 plugins {
     id 'java'
+    // war packaging: JSP does not work from an executable jar; the legacy
+    // console (RP5) lives in src/main/webapp per DESIGN.md Section 6. The
+    // boot war stays directly runnable (java -jar).
+    id 'war'
     id 'org.springframework.boot' version '3.5.16'
     id 'io.spring.dependency-management' version '1.1.7'
 }
@@ -21,8 +25,16 @@ repositories {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.neo4j.driver:neo4j-java-driver:5.28.0'
+    // Legacy admin console (RP5): server-rendered JSP + JSTL, assets via WebJars
+    implementation 'org.apache.tomcat.embed:tomcat-embed-jasper'
+    implementation 'jakarta.servlet.jsp.jstl:jakarta.servlet.jsp.jstl-api'
+    implementation 'org.glassfish.web:jakarta.servlet.jsp.jstl'
+    implementation 'org.webjars:bootstrap:5.3.7'
+    implementation 'org.webjars:jquery:3.7.1'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'au.com.dius.pact.provider:junit5:4.6.17'
 }
 
