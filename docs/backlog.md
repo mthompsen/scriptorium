@@ -67,10 +67,21 @@ Section 15; stories are the concrete increments inside each. Status values:
 | Frontend graph explorer (react-force-graph-2d) | done — endpoints verified with real data; canvas render spot-check left to manual browser pass (automation flaked) |
 | Pact contract BFF↔retrieval (consumer jest → committed pact → pact-jvm verify + CI drift check) | done — provider verification green |
 
-## Epic M5 — DevSecOps + Kubernetes + GitOps *(todo)*
+## Epic M5 — DevSecOps + Kubernetes + GitOps *(done — 2026-07-14)*
 
-Full security pipeline (SAST, dep/secret/container scans, SBOM, cosign) ·
-Kustomize base + overlays · Argo CD · `azure-pipelines.yml` mirror.
+| Story | Status |
+|---|---|
+| Security findings triage: 33 HIGH/CRITICAL + 8 SAST → 0, every one fixed, zero waivers (`docs/security-findings.md`, ADR-0007) | done |
+| CI security pipeline: Semgrep (+custom rules), gitleaks, Trivy fs/image, CodeQL (visibility-gated), SBOM (Syft), cosign keyless by digest, findings gate | done — green in cloud, images signed to Sigstore tlog |
+| Dependabot + pre-commit hooks | done |
+| Kustomize base + dev/staging/prod overlays (probes, limits, netpol, non-root) | done — all 30 objects admitted by a real API server (kind) |
+| Argo CD Applications (staging auto-sync, prod manual) + GitOps tag-bump on main | done |
+| Kyverno signed-image admission policy (staging/prod) | done |
+| `azure-pipelines.yml` mirror | done — authored + schema-valid; no ADO org to execute (ADR-0007) |
+
+**Environment gaps (documented, not gamed):** CodeQL activates when the repo
+goes public (private-repo GHAS); the ADO mirror and live Argo CD
+reconciliation await an ADO org / persistent cluster.
 
 ## Epic M6 — Cloud + serverless *(todo)*
 

@@ -1,0 +1,104 @@
+# Azure DevOps pipeline — mirrors the GitHub Actions stages (DESIGN.md
+# Section 14.1, R5 "Azure DevOps or similar"). GitHub Actions is the
+# executing pipeline of record; this is authored and schema-valid but has no
+# ADO organization to run in (ADR-0007). Kept in sync when ci.yml /
+# security.yml change.
+trigger:
+  branches:
+    include: [main]
+
+pr:
+  branches:
+    include: ["*"]
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+  - stage: lint_test
+    displayName: Lint + unit tests
+    jobs:
+      - job: node
+        strategy:
+          matrix:
+            bff: { dir: services/bff }
+            frontend: { dir: frontend }
+        steps:
+          - task: NodeTool@0
+            inputs: { versionSpec: "22.x" }
+          - script: npm ci
+            workingDirectory: $(dir)
+          - script: npm run lint
+            workingDirectory: $(dir)
+          - script: npm test
+            workingDirectory: $(dir)
+
+      - job: python
+        strategy:
+          matrix:
+            ingestion: { dir: services/ingestion }
+            agent: { dir: services/agent }
+            llm: { dir: packages/llm }
+        steps:
+          - task: UsePythonVersion@0
+            inputs: { versionSpec: "3.12" }
+          - script: |
+              if [ "$(dir)" != "packages/llm" ]; then pip install -e packages/llm; fi
+              cd $(dir) && pip install -e ".[dev]" && ruff check . && pytest -q
+            displayName: install + lint + test
+
+      - job: java
+        steps:
+          - task: JavaToolInstaller@0
+            inputs:
+              versionSpec: "21"
+              jdkArchitectureOption: x64
+              jdkSourceOption: PreInstalled
+          - script: gradle --no-daemon test
+            workingDirectory: services/retrieval
+
+  - stage: security
+    displayName: SAST + scans + SBOM + sign
+    dependsOn: lint_test
+    jobs:
+      - job: scanners
+        displayName: semgrep + gitleaks + trivy fs (findings gate)
+        steps:
+          - script: |
+              docker run --rm -v "$PWD:/src" -w /src semgrep/semgrep:latest \
+                semgrep scan --config p/default --config .semgrep.yml --error --severity ERROR
+            displayName: Semgrep SAST (gate ERROR)
+          - script: |
+              docker run --rm -v "$PWD:/repo" -w /repo ghcr.io/gitleaks/gitleaks:latest \
+                detect --source /repo --no-banner --redact
+            displayName: gitleaks secret scan
+          - script: |
+              docker run --rm -v "$PWD:/repo" aquasec/trivy:latest fs \
+                --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 /repo
+            displayName: Trivy dependency scan (gate HIGH/CRITICAL)
+
+      - job: images
+        displayName: build + scan + SBOM + sign
+        dependsOn: scanners
+        strategy:
+          matrix:
+            bff: { service: bff, dockerfile: infra/docker/Dockerfile.bff }
+            frontend: { service: frontend, dockerfile: infra/docker/Dockerfile.frontend }
+            ingestion: { service: ingestion, dockerfile: infra/docker/Dockerfile.ingestion }
+            agent: { service: agent, dockerfile: infra/docker/Dockerfile.agent }
+            retrieval: { service: retrieval, dockerfile: infra/docker/Dockerfile.retrieval }
+        steps:
+          - script: docker build -f $(dockerfile) -t scriptorium-$(service):$(Build.SourceVersion) .
+            displayName: build image
+          - script: |
+              docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest \
+                image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 \
+                scriptorium-$(service):$(Build.SourceVersion)
+            displayName: Trivy image scan (gate HIGH/CRITICAL)
+          - script: |
+              docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+                anchore/syft:latest scriptorium-$(service):$(Build.SourceVersion) \
+                -o spdx-json > sbom-$(service).spdx.json
+            displayName: SBOM (Syft)
+          - publish: sbom-$(service).spdx.json
+            artifact: sbom-$(service)
