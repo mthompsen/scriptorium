@@ -30,6 +30,9 @@ def create_provider(env: dict[str, str] | None = None) -> LLMProvider:
             host=env.get("OLLAMA_URL", "http://localhost:11434"),
             embed_model=env.get("EMBED_MODEL", "nomic-embed-text"),
             chat_model=env.get("CHAT_MODEL", "llama3.2:3b"),
+            # Cold model loads + big-model CPU inference can exceed the 300s
+            # default on modest hardware.
+            timeout_s=float(env.get("OLLAMA_TIMEOUT_S", "300")),
         )
     if provider == "bedrock":
         from scriptorium_llm.bedrock import BedrockProvider
