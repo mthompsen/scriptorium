@@ -1,0 +1,15 @@
+{
+  "name": "@scriptorium/e2e",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Playwright end-to-end journeys against the docker-compose stack (DESIGN.md Section 13)",
+  "scripts": {
+    "test": "playwright test",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
+    "@playwright/test": "^1.53.0",
+    "@types/node": "^22.15.0"
+  }
+}
