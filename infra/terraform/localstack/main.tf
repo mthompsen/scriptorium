@@ -32,8 +32,10 @@ provider "aws" {
 }
 
 module "ingestion" {
-  source      = "../modules/ingestion"
-  name_prefix = "scriptorium-ls"
+  source                 = "../modules/ingestion"
+  name_prefix            = "scriptorium-ls"
+  enable_lifecycle_rules = false # LocalStack lifecycle-propagation gap (see module var)
+  force_destroy          = true  # throwaway — allow clean teardown
 }
 
 output "bucket_name" { value = module.ingestion.bucket_name }

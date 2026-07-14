@@ -9,7 +9,8 @@ resource "aws_s3_bucket" "logs" {
   #checkov:skip=CKV2_AWS_61:Log bucket lifecycle handled by the expiration rule below.
   #checkov:skip=CKV_AWS_144:Single-region demo; cross-region replication doubles storage cost (ADR-0008).
   #checkov:skip=CKV2_AWS_62:Event notifications not needed on the log bucket.
-  bucket = "${var.name_prefix}-raw-uploads-logs"
+  bucket        = "${var.name_prefix}-raw-uploads-logs"
+  force_destroy = var.force_destroy
 }
 
 resource "aws_s3_bucket_public_access_block" "logs" {
@@ -34,6 +35,7 @@ resource "aws_s3_bucket_versioning" "logs" {
 }
 
 resource "aws_s3_bucket_lifecycle_configuration" "logs" {
+  count  = var.enable_lifecycle_rules ? 1 : 0
   bucket = aws_s3_bucket.logs.id
   rule {
     id     = "expire-logs"
@@ -47,7 +49,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "logs" {
 # ── Raw uploads bucket ────────────────────────────────────────────────
 resource "aws_s3_bucket" "raw" {
   #checkov:skip=CKV_AWS_144:Single-region demo; cross-region replication doubles storage cost (ADR-0008).
-  bucket = "${var.name_prefix}-raw-uploads"
+  bucket        = "${var.name_prefix}-raw-uploads"
+  force_destroy = var.force_destroy
 }
 
 resource "aws_s3_bucket_logging" "raw" {
@@ -57,6 +60,7 @@ resource "aws_s3_bucket_logging" "raw" {
 }
 
 resource "aws_s3_bucket_lifecycle_configuration" "raw" {
+  count  = var.enable_lifecycle_rules ? 1 : 0
   bucket = aws_s3_bucket.raw.id
   rule {
     id     = "expire-old-versions"
