@@ -4,9 +4,9 @@ import { login } from './helpers';
 
 /**
  * The critical journey (Section 15 M1–M3): sign in, upload a document, ask a
- * question, get a grounded, cited answer streamed into the chat.
+ * question, get a grounded answer streamed into the chat.
  */
-test.describe('login → upload → cited answer', () => {
+test.describe('login → upload → grounded answer', () => {
   // Parse → chunk → embed → index, then agent loop on a CPU-bound 3B model.
   test.setTimeout(600_000);
 
