@@ -25,12 +25,12 @@ replicas:
 
 images:
 - name: ghcr.io/mthompsen/scriptorium/agent
-  newTag: c0586886cf15fd64e56921485335bdbdcb685ca2
+  newTag: efcbbc24bc1cfea69fec2b9160ff5bf67aa9f4e0
 - name: ghcr.io/mthompsen/scriptorium/bff
-  newTag: c0586886cf15fd64e56921485335bdbdcb685ca2
+  newTag: efcbbc24bc1cfea69fec2b9160ff5bf67aa9f4e0
 - name: ghcr.io/mthompsen/scriptorium/frontend
-  newTag: c0586886cf15fd64e56921485335bdbdcb685ca2
+  newTag: efcbbc24bc1cfea69fec2b9160ff5bf67aa9f4e0
 - name: ghcr.io/mthompsen/scriptorium/ingestion
-  newTag: c0586886cf15fd64e56921485335bdbdcb685ca2
+  newTag: efcbbc24bc1cfea69fec2b9160ff5bf67aa9f4e0
 - name: ghcr.io/mthompsen/scriptorium/retrieval
-  newTag: c0586886cf15fd64e56921485335bdbdcb685ca2
+  newTag: efcbbc24bc1cfea69fec2b9160ff5bf67aa9f4e0
