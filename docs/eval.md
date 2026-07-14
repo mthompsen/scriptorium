@@ -9,23 +9,30 @@ from a real run — never asserted by hand.
 
 ## Results
 
-**Run: 2026-07-13 (clean harness)** — local stack, hybrid BM25 + kNN with RRF
-fusion, `nomic-embed-text` embeddings; generation via the M3 agent loop with
-`llama3.2:3b` on CPU, judged by the same model.
-
-### Retrieval (10 queries, k=5)
+**Retrieval (clean harness, 10 queries, k=5)** — hybrid BM25 + kNN with RRF
+fusion, `nomic-embed-text` embeddings. Stable across every clean run:
 
 | Metric | Value |
 |---|---|
 | recall@5 | **1.0** |
 | MRR | **1.0** (every query hits at rank 1) |
 
-### Generation (agent loop, 5-query subset)
+**Generation (agent loop, 5-query subset)** — by generator/judge model:
 
-| Metric | Value |
-|---|---|
-| Citation coverage (sentences with a resolving citation) | **0.2** |
-| Groundedness (LLM-as-judge) | **0.4** |
+| Run | Generator | Judge | Citation coverage | Groundedness |
+|---|---|---|---|---|
+| 2026-07-13 | `llama3.2:3b` (Ollama, CPU) | `llama3.2:3b` (self-judge) | **0.2** | **0.4** |
+| 2026-07-13 | `qwen2.5:7b` (Ollama, CPU) | `llama3.2:3b` | *infeasible on this hardware* — see note | — |
+| pending | hosted API model via headless CLI | independent local model | awaiting subscription window recovery | — |
+
+**qwen2.5:7b infeasibility note (honest negative result):** on this CPU the
+7B model measured ~13 minutes per eval query through the loop (262s for the
+tool-decision call, ~4.5 min for synthesis, plus multi-minute model loads —
+a one-word warm-up prompt alone took 3m24s). Eval runs wall-clock-refused
+rather than producing quality numbers; the one answer that completed under a
+900s budget was correctly grounded and cited, so this is a hardware bound,
+not a model-quality result. The 3B row therefore stands as the local
+baseline.
 
 ## Honest caveats
 
