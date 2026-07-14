@@ -5,11 +5,14 @@ JSON Schema before execution, and the tenant scope is injected server-side —
 the model can never widen it. The model never executes arbitrary code.
 """
 
+import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
 import jsonschema
+
+_INT_STRING = re.compile(r"-?\d+")
 
 
 @dataclass
@@ -53,11 +56,41 @@ class ToolRegistry:
         tool = self._tools.get(name)
         if tool is None:
             raise ToolValidationError(f"tool '{name}' is not in the allowlist")
+        args = _coerce_arguments(args, tool.input_schema)
         try:
             jsonschema.validate(args, tool.input_schema)
         except jsonschema.ValidationError as error:
             raise ToolValidationError(f"invalid input for {name}: {error.message}") from error
         return tool.execute(tenant_id, args)
+
+
+def _coerce_arguments(args: dict, schema: dict) -> dict:
+    """Coerce the loose JSON scalars small models emit ('10' for 10) to each
+    property's schema type BEFORE validation. Conservative on purpose: only
+    unambiguous conversions; anything else still fails validation."""
+    properties = schema.get("properties", {})
+    return {
+        key: _coerce_value(value, properties.get(key, {}).get("type"))
+        for key, value in args.items()
+    }
+
+
+def _coerce_value(value: Any, expected: str | None) -> Any:
+    if expected == "integer":
+        if isinstance(value, str) and _INT_STRING.fullmatch(value.strip()):
+            return int(value.strip())
+        if isinstance(value, float) and value.is_integer():
+            return int(value)
+    elif expected == "number" and isinstance(value, str):
+        try:
+            return float(value.strip())
+        except ValueError:
+            return value
+    elif expected == "boolean" and isinstance(value, str):
+        lowered = value.strip().lower()
+        if lowered in ("true", "false"):
+            return lowered == "true"
+    return value
 
 
 def build_registry(retrieval, catalog) -> ToolRegistry:

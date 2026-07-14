@@ -59,6 +59,45 @@ def test_unknown_tool_is_rejected_by_the_allowlist(registry) -> None:
         registry.execute("tenant-1", "run_shell_command", {"cmd": "rm -rf /"})
 
 
+def test_stringified_integers_from_small_models_are_coerced() -> None:
+    """Regression: llama3.2:3b emits {"k": "10"}; validation must not reject it."""
+    retrieval = FakeRetrieval()
+    registry = build_registry(retrieval, FakeCatalog())
+
+    result = registry.execute("tenant-1", "search_documents", {"query": "pto", "k": "10"})
+
+    assert result.chunks == [CHUNK]
+    called = next(c for c in retrieval.calls if c[0] == "retrieve")
+    assert called[3] == 10  # executor received a real int
+    assert isinstance(called[3], int)
+
+
+def test_integral_floats_and_window_strings_are_coerced() -> None:
+    retrieval = FakeRetrieval()
+    registry = build_registry(retrieval, FakeCatalog())
+
+    registry.execute("tenant-1", "search_documents", {"query": "pto", "k": 10.0})
+    registry.execute(
+        "tenant-1",
+        "get_document",
+        {"document_id": "11111111-1111-4111-8111-111111111111", "from": "0", "to": "5"},
+    )
+
+    retrieve_call = next(c for c in retrieval.calls if c[0] == "retrieve")
+    assert retrieve_call[3] == 10 and isinstance(retrieve_call[3], int)
+    fetch_call = next(c for c in retrieval.calls if c[0] == "fetch_chunks")
+    assert fetch_call[3] == 0 and fetch_call[4] == 5
+
+
+def test_coercion_stays_conservative_for_genuinely_bad_input(registry) -> None:
+    with pytest.raises(ToolValidationError, match="invalid input"):
+        registry.execute("tenant-1", "search_documents", {"query": "x", "k": "abc"})
+    with pytest.raises(ToolValidationError, match="invalid input"):
+        registry.execute("tenant-1", "search_documents", {"query": "x", "k": "10.5"})
+    with pytest.raises(ToolValidationError, match="invalid input"):
+        registry.execute("tenant-1", "search_documents", {"query": "x", "k": "999"})
+
+
 def test_inputs_are_schema_validated_before_execution(registry) -> None:
     with pytest.raises(ToolValidationError, match="invalid input"):
         registry.execute("tenant-1", "search_documents", {"query": "x", "k": 999})
