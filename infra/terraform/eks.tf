@@ -1,6 +1,7 @@
 # EKS via the community module. Managed node group in private subnets; IRSA
 # enabled so pods assume the Bedrock role (bedrock.tf) without node creds.
 module "eks" {
+  #checkov:skip=CKV_TF_1:Registry module pinned by version constraint; integrity via .terraform.lock.hcl checksums (ADR-0008).
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 20.24"
 

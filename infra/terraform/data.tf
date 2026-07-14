@@ -16,10 +16,11 @@ resource "aws_security_group" "rds" {
     security_groups = [module.eks.node_security_group_id]
   }
   egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    description     = "Return traffic to EKS nodes only"
+    from_port       = 0
+    to_port         = 0
+    protocol        = "-1"
+    security_groups = [module.eks.node_security_group_id]
   }
 }
 
@@ -43,6 +44,46 @@ resource "aws_db_subnet_group" "main" {
   subnet_ids = module.vpc.private_subnets
 }
 
+# Enhanced-monitoring role.
+data "aws_iam_policy_document" "rds_monitoring_assume" {
+  statement {
+    effect  = "Allow"
+    actions = ["sts:AssumeRole"]
+    principals {
+      type        = "Service"
+      identifiers = ["monitoring.rds.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role" "rds_monitoring" {
+  name               = "${var.name_prefix}-rds-monitoring"
+  assume_role_policy = data.aws_iam_policy_document.rds_monitoring_assume.json
+}
+
+resource "aws_iam_role_policy_attachment" "rds_monitoring" {
+  role       = aws_iam_role.rds_monitoring.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
+}
+
+# Parameter group enabling statement + slow-query logging (CKV2_AWS_30).
+resource "aws_db_parameter_group" "postgres" {
+  name   = "${var.name_prefix}-postgres"
+  family = "postgres16"
+  parameter {
+    name  = "log_statement"
+    value = "ddl"
+  }
+  parameter {
+    name  = "log_min_duration_statement"
+    value = "1000"
+  }
+  parameter {
+    name  = "rds.force_ssl"
+    value = "1" # enforce TLS in transit (CKV2_AWS_69)
+  }
+}
+
 resource "aws_db_instance" "postgres" {
   identifier     = "${var.name_prefix}-postgres"
   engine         = "postgres"
@@ -60,8 +101,17 @@ resource "aws_db_instance" "postgres" {
 
   db_subnet_group_name   = aws_db_subnet_group.main.name
   vpc_security_group_ids = [aws_security_group.rds.id]
+  parameter_group_name   = aws_db_parameter_group.postgres.name
   multi_az               = true
   publicly_accessible    = false
+
+  iam_database_authentication_enabled = true
+  performance_insights_enabled        = true
+  performance_insights_kms_key_id     = aws_kms_key.main.arn
+  enabled_cloudwatch_logs_exports     = ["postgresql", "upgrade"]
+  monitoring_interval                 = 60
+  monitoring_role_arn                 = aws_iam_role.rds_monitoring.arn
+  copy_tags_to_snapshot               = true
 
   backup_retention_period    = 7
   auto_minor_version_upgrade = true
@@ -71,7 +121,15 @@ resource "aws_db_instance" "postgres" {
 }
 
 # ── OpenSearch ────────────────────────────────────────────────────────
+resource "aws_cloudwatch_log_group" "opensearch" {
+  name              = "/aws/opensearch/${var.name_prefix}-search"
+  retention_in_days = 365
+  kms_key_id        = aws_kms_key.main.arn
+}
+
 resource "aws_opensearch_domain" "main" {
+  #checkov:skip=CKV2_AWS_59:Dedicated master nodes ~triple the cluster cost; single-tier is a deliberate non-prod-scale choice (ADR-0008).
+  #checkov:skip=CKV_AWS_318:Same — 3 dedicated masters not warranted at this scale.
   domain_name    = "${var.name_prefix}-search"
   engine_version = "OpenSearch_2.15"
 
@@ -93,10 +151,34 @@ resource "aws_opensearch_domain" "main" {
     security_group_ids = [aws_security_group.opensearch.id]
   }
 
-  encrypt_at_rest { enabled = true }
+  encrypt_at_rest {
+    enabled    = true
+    kms_key_id = aws_kms_key.main.arn
+  }
   node_to_node_encryption { enabled = true }
   domain_endpoint_options {
     enforce_https       = true
     tls_security_policy = "Policy-Min-TLS-1-2-2019-07"
+  }
+
+  # Fine-grained access control (internal user DB over HTTPS).
+  advanced_security_options {
+    enabled                        = true
+    internal_user_database_enabled = true
+    master_user_options {
+      master_user_name     = "admin"
+      master_user_password = var.rds_password # reuse the injected secret var
+    }
+  }
+
+  log_publishing_options {
+    cloudwatch_log_group_arn = aws_cloudwatch_log_group.opensearch.arn
+    log_type                 = "AUDIT_LOGS"
+    enabled                  = true
+  }
+  log_publishing_options {
+    cloudwatch_log_group_arn = aws_cloudwatch_log_group.opensearch.arn
+    log_type                 = "INDEX_SLOW_LOGS"
+    enabled                  = true
   }
 }

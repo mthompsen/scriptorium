@@ -1,6 +1,7 @@
 # VPC via the community module (idiomatic, ADR-0008). Public subnets for the
 # ALB, private for EKS nodes + data tiers; NAT for egress.
 module "vpc" {
+  #checkov:skip=CKV_TF_1:Registry module pinned by version constraint; integrity via .terraform.lock.hcl checksums (ADR-0008).
   source  = "terraform-aws-modules/vpc/aws"
   version = "~> 5.13"
 
