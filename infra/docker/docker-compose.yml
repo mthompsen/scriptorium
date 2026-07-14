@@ -32,6 +32,7 @@ services:
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
       INGESTION_URL: http://ingestion:8001
       AGENT_URL: http://agent:8002
+      RETRIEVAL_URL: http://retrieval:8080
       FRONTEND_ORIGIN: http://localhost:3000
     depends_on:
       migrate:
