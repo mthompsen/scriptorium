@@ -1,0 +1,26 @@
+# Staging overlay: 2 replicas on stateless services, own namespace.
+# Image tags are bumped here by the GitOps CI job on merges to main.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: scriptorium-staging
+
+resources:
+  - ../../base
+
+patches:
+  - target: { kind: Namespace, name: scriptorium }
+    patch: |
+      - { op: replace, path: /metadata/name, value: scriptorium-staging }
+
+replicas:
+  - { name: bff, count: 2 }
+  - { name: frontend, count: 2 }
+  - { name: retrieval, count: 2 }
+
+images:
+  - { name: ghcr.io/mthompsen/scriptorium-bff, newTag: staging }
+  - { name: ghcr.io/mthompsen/scriptorium-frontend, newTag: staging }
+  - { name: ghcr.io/mthompsen/scriptorium-ingestion, newTag: staging }
+  - { name: ghcr.io/mthompsen/scriptorium-agent, newTag: staging }
+  - { name: ghcr.io/mthompsen/scriptorium-retrieval, newTag: staging }

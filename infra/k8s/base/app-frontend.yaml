@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  labels: { app.kubernetes.io/name: frontend, app.kubernetes.io/component: web }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app.kubernetes.io/name: frontend }
+  template:
+    metadata:
+      labels: { app.kubernetes.io/name: frontend }
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: frontend
+          image: ghcr.io/mthompsen/scriptorium-frontend:latest
+          ports: [{ containerPort: 3000 }]
+          readinessProbe:
+            httpGet: { path: /api/health, port: 3000 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /api/health, port: 3000 }
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 512Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: [ALL] }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+spec:
+  selector: { app.kubernetes.io/name: frontend }
+  ports: [{ port: 3000, targetPort: 3000 }]

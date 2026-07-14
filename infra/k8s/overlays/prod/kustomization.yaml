@@ -1,0 +1,34 @@
+# Prod overlay: 3 replicas on stateless services, raised resource requests,
+# own namespace, pinned image tags (bumped by release, not auto).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: scriptorium-prod
+
+resources:
+  - ../../base
+
+patches:
+  - target: { kind: Namespace, name: scriptorium }
+    patch: |
+      - { op: replace, path: /metadata/name, value: scriptorium-prod }
+  # Raise app-service memory requests for prod headroom.
+  - target: { kind: Deployment, labelSelector: "app.kubernetes.io/component in (edge,web,read-path,write-path,reason-path)" }
+    patch: |
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: 512Mi
+
+replicas:
+  - { name: bff, count: 3 }
+  - { name: frontend, count: 3 }
+  - { name: retrieval, count: 3 }
+  - { name: agent, count: 2 }
+  - { name: ingestion, count: 2 }
+
+images:
+  - { name: ghcr.io/mthompsen/scriptorium-bff, newTag: prod }
+  - { name: ghcr.io/mthompsen/scriptorium-frontend, newTag: prod }
+  - { name: ghcr.io/mthompsen/scriptorium-ingestion, newTag: prod }
+  - { name: ghcr.io/mthompsen/scriptorium-agent, newTag: prod }
+  - { name: ghcr.io/mthompsen/scriptorium-retrieval, newTag: prod }

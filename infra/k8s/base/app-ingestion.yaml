@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingestion
+  labels: { app.kubernetes.io/name: ingestion, app.kubernetes.io/component: write-path }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app.kubernetes.io/name: ingestion }
+  template:
+    metadata:
+      labels: { app.kubernetes.io/name: ingestion }
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: ingestion
+          image: ghcr.io/mthompsen/scriptorium-ingestion:latest
+          ports: [{ containerPort: 8001 }]
+          envFrom:
+            - configMapRef: { name: scriptorium-config }
+          env:
+            - name: NEO4J_PASSWORD
+              valueFrom: { secretKeyRef: { name: scriptorium-secrets, key: NEO4J_PASSWORD } }
+          readinessProbe:
+            httpGet: { path: /health, port: 8001 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /health, port: 8001 }
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { cpu: "1", memory: 1Gi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: [ALL] }
+          # gunicorn writes its control socket under $HOME; /tmp for scratch.
+          volumeMounts:
+            - { name: home, mountPath: /home/appuser }
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - { name: home, emptyDir: {} }
+        - { name: tmp, emptyDir: {} }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingestion
+spec:
+  selector: { app.kubernetes.io/name: ingestion }
+  ports: [{ port: 8001, targetPort: 8001 }]

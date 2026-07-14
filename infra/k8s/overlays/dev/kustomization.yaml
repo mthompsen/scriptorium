@@ -1,0 +1,7 @@
+# Dev overlay: single replicas (base defaults), local namespace.
+# Images default to :latest for a locally-loaded build.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
