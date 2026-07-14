@@ -18,6 +18,15 @@ __pycache__/
 build/
 .gradle/
 
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+*.tfvars
+!*.tfvars.example
+infra/terraform/**/.build/
+
 # Env & secrets
 .env
 .env.local
