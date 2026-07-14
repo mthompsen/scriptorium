@@ -76,6 +76,31 @@ export interface ToolEvent {
   summary: string;
 }
 
+export interface GraphEntityHit {
+  id: string;
+  name: string;
+  type: string;
+  mention_count: number;
+}
+
+export interface GraphNode {
+  id: string;
+  name: string;
+  type: string;
+}
+
+export interface GraphEdge {
+  source: string;
+  target: string;
+  relation: string;
+  confidence: number;
+}
+
+export interface Neighborhood {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+}
+
 export interface StreamHandlers {
   onUserMessage?: (message: ChatMessage) => void;
   onToken?: (text: string) => void;

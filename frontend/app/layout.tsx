@@ -27,6 +27,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <Link href="/library" className="text-sm text-slate-600 hover:text-slate-900">
               Library
             </Link>
+            <Link href="/graph" className="text-sm text-slate-600 hover:text-slate-900">
+              Graph
+            </Link>
             <Link href="/login" className="ml-auto text-sm text-slate-600 hover:text-slate-900">
               Sign in
             </Link>
