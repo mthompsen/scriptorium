@@ -41,11 +41,26 @@ def _build_default_dependencies() -> tuple:
 
     registry = DocumentRegistry(database_url)
     store = RawDocumentStore(mongo_url)
+
+    extractor = graph = None
+    if os.environ.get("GRAPH_EXTRACTION", "on").lower() != "off":
+        from ingestion_service.extraction import EntityExtractor
+        from ingestion_service.graph_store import Neo4jGraphStore
+
+        extractor = EntityExtractor(create_provider())
+        graph = Neo4jGraphStore(
+            uri=os.environ.get("NEO4J_URI", "bolt://localhost:7687"),
+            user=os.environ.get("NEO4J_USER", "neo4j"),
+            password=os.environ.get("NEO4J_PASSWORD", "scriptorium-dev"),
+        )
+
     pipeline = Pipeline(
         registry=registry,
         chunk_store=ChunkStore(mongo_url),
         index=OpenSearchIndex(opensearch_url),
         embedder=create_provider(),
+        extractor=extractor,
+        graph=graph,
     )
     return registry, store, PipelineRunner(pipeline)
 

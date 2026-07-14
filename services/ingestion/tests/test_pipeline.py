@@ -90,6 +90,61 @@ def test_failure_marks_document_failed_not_indexed() -> None:
     assert index.indexed == []
 
 
+def test_graph_stage_runs_after_indexing_and_tolerates_chunk_failures() -> None:
+    from ingestion_service.extraction import Entity, Relation
+
+    class FlakyExtractor:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def extract(self, text):
+            self.calls += 1
+            if self.calls == 1:
+                raise ValueError("model hiccup")
+            return (
+                [Entity(name="Aurelia Corp", type="organization")],
+                [Relation(source="Aurelia Corp", relation="owns",
+                          target="Aurelia Corp", confidence=0.9)],
+            )
+
+    class FakeGraph:
+        def __init__(self) -> None:
+            self.calls: list[dict] = []
+
+        def replace_document_graph(self, tenant_id, document_id, title, chunks, relations, types):
+            self.calls.append({"chunks": chunks, "relations": relations})
+
+    registry, graph = FakeRegistry(), FakeGraph()
+    pipeline = Pipeline(
+        registry, FakeChunkStore(), FakeIndex(), FakeEmbedder(),
+        extractor=FlakyExtractor(), graph=graph,
+    )
+    multi_chunk = IngestJob(
+        tenant_id=str(uuid.uuid4()),
+        document_id=str(uuid.uuid4()),
+        filename="handbook.md",
+        mime_type="text/markdown",
+        content=b"# A\n\n" + b"alpha " * 600 + b"\n\n# B\n\n" + b"beta " * 600,
+    )
+
+    pipeline.run(multi_chunk)
+
+    assert registry.statuses[-1] == "indexed"  # graph errors never fail the doc
+    assert len(graph.calls) == 1
+    chunk_rows = graph.calls[0]["chunks"]
+    assert len(chunk_rows) >= 1  # first chunk skipped (extractor raised), rest present
+    assert chunk_rows[0]["entities"][0].name == "Aurelia Corp"
+
+
+def test_graph_stage_absent_when_not_configured() -> None:
+    registry = FakeRegistry()
+    pipeline = Pipeline(registry, FakeChunkStore(), FakeIndex(), FakeEmbedder())
+
+    pipeline.run(job())
+
+    assert registry.statuses == ["processing", "indexed"]
+
+
 def test_empty_document_fails_rather_than_indexing_nothing() -> None:
     registry = FakeRegistry()
     pipeline = Pipeline(registry, FakeChunkStore(), FakeIndex(), FakeEmbedder())

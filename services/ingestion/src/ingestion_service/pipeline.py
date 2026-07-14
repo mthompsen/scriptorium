@@ -28,11 +28,22 @@ class IngestJob:
 
 
 class Pipeline:
-    def __init__(self, registry, chunk_store, index, embedder: Embedder) -> None:
+    def __init__(
+        self,
+        registry,
+        chunk_store,
+        index,
+        embedder: Embedder,
+        extractor=None,
+        graph=None,
+    ) -> None:
         self._registry = registry
         self._chunk_store = chunk_store
         self._index = index
         self._embedder = embedder
+        # Optional graph stage (M4, ADR-0006): both must be present to run.
+        self._extractor = extractor
+        self._graph = graph
 
     def run(self, job: IngestJob) -> None:
         try:
@@ -51,6 +62,8 @@ class Pipeline:
             self._index.ensure_index(job.tenant_id, dimension=len(embeddings[0]))
             self._index.delete_document(job.tenant_id, job.document_id)
             self._index.bulk_index(job.tenant_id, job.document_id, chunk_ids, texts, embeddings)
+            if self._extractor is not None and self._graph is not None:
+                self._extract_graph(job, chunk_ids, chunks)
             self._registry.mark_indexed(job.tenant_id, job.document_id)
             logger.info(
                 "indexed document %s (%d chunks) for tenant %s",
@@ -61,6 +74,42 @@ class Pipeline:
         except Exception:
             logger.exception("pipeline failed for document %s", job.document_id)
             self._registry.set_status(job.tenant_id, job.document_id, "failed")
+
+    def _extract_graph(self, job: IngestJob, chunk_ids: list[str], chunks) -> None:
+        """Graph enrichment (Section 9.1). Per-chunk extraction failures are
+        logged and skipped — the graph enriches a document, it must never
+        fail one that already indexed."""
+        chunk_rows: list[dict] = []
+        entity_types: dict[str, str] = {}
+        all_relations: list = []
+        for chunk_id, chunk in zip(chunk_ids, chunks, strict=True):
+            try:
+                entities, relations = self._extractor.extract(chunk.text)
+            except Exception:
+                logger.exception("extraction failed for chunk %s; skipping", chunk_id)
+                continue
+            for entity in entities:
+                entity_types[entity.name.lower()] = entity.type
+            chunk_rows.append(
+                {"chunk_id": chunk_id, "ordinal": chunk.ordinal, "entities": entities}
+            )
+            all_relations.extend(relations)
+        if not chunk_rows:
+            return
+        self._graph.replace_document_graph(
+            job.tenant_id,
+            job.document_id,
+            job.filename,
+            chunk_rows,
+            all_relations,
+            entity_types,
+        )
+        logger.info(
+            "graph updated for document %s (%d entities, %d relations)",
+            job.document_id,
+            len(entity_types),
+            len(all_relations),
+        )
 
 
 class PipelineRunner:
