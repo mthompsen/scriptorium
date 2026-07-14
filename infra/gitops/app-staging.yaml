@@ -1,0 +1,25 @@
+# Argo CD Application: reconciles the staging overlay from Git (DESIGN.md
+# Section 14.4). Merges to main bump the overlay's image tags (GitOps CI
+# job); Argo CD syncs the cluster to match.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: scriptorium-staging
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/mthompsen/scriptorium.git
+    targetRevision: main
+    path: infra/k8s/overlays/staging
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: scriptorium-staging
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

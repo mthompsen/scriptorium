@@ -1,0 +1,31 @@
+# Kyverno ClusterPolicy: admit only cosign-signed Scriptorium images in
+# staging/prod (DESIGN.md Section 12 supply-chain integrity, ADR-0007).
+# Verification is keyless — the signature identity must be the GitHub Actions
+# workflow that built and signed the image, anchored to the Sigstore roots.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: verify-scriptorium-image-signatures
+  annotations:
+    policies.kyverno.io/title: Verify Scriptorium image signatures
+    policies.kyverno.io/category: Supply Chain Security
+spec:
+  validationFailureAction: Enforce
+  background: false
+  rules:
+    - name: verify-cosign-keyless
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [scriptorium-staging, scriptorium-prod]
+      verifyImages:
+        - imageReferences:
+            - "ghcr.io/mthompsen/scriptorium-*"
+          attestors:
+            - entries:
+                - keyless:
+                    subject: "https://github.com/mthompsen/scriptorium/.github/workflows/security.yml@refs/heads/main"
+                    issuer: "https://token.actions.githubusercontent.com"
+                    rekor:
+                      url: https://rekor.sigstore.dev

@@ -1,0 +1,21 @@
+# Argo CD Application: prod. Manual sync (no automated) — prod releases are
+# a deliberate promotion, not an auto-follow of main.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: scriptorium-prod
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/mthompsen/scriptorium.git
+    targetRevision: main
+    path: infra/k8s/overlays/prod
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: scriptorium-prod
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
