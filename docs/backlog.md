@@ -98,7 +98,13 @@ but **never applied** — a live AWS apply is billable (~$450–550/mo) and awai
 explicit cost approval (ADR-0008, runbook). The serverless requirement (R4) is
 demonstrated costlessly via LocalStack.
 
-## Epic M7 — Legacy console + hardening + polish *(todo)*
+## Epic M7 — Legacy console + hardening + polish *(done — 2026-07-14)*
 
-JSP/jQuery/Bootstrap legacy console · accessibility + responsive passes ·
-Playwright e2e · final eval run · reviewer-grade README.
+| Story | Status |
+|---|---|
+| JSP + jQuery + Bootstrap legacy console in the Spring Boot service (war packaging, Basic-auth chain, read-only corpus/graph stats; ADR-0009) | done — renders live, covered by unit + security + e2e tests |
+| Modern admin page linking the console, labeled legacy | done |
+| Accessibility + responsive pass (skip link, ARIA roles/labels, contrast, table semantics, canvas text alternative) | done — axe-core gate green on all pages |
+| Playwright e2e: login→upload→cited answer, graph explorer, legacy console, a11y gate | done — 8/8 against the compose stack (local-only, ADR-0009) |
+| Final eval run (`scripts/run-eval.ps1`, local 3B baseline) | done — retrieval 1.0/1.0 re-confirmed; generation coverage 0.4667, judge-noise analysis in `docs/eval.md` |
+| Reviewer-grade README: traceability tables, architecture diagram, honest live-vs-authored status, screenshots | done — screenshots captured from the live stack |

@@ -31,6 +31,30 @@ http://localhost:7474 (neo4j / scriptorium-dev).
 An end-to-end API smoke test lives at `scripts/e2e-smoke.ps1`
 (login → upload → status → chat → authz check).
 
+### Browser e2e (Playwright, M7)
+
+The journey suite lives in `e2e/` and runs against the started compose
+stack (not in CI — ADR-0009):
+
+```sh
+cd e2e
+npm install && npx playwright install chromium   # first time
+npm test
+```
+
+Eight tests: login → upload → cited chat answer (slow: CPU inference),
+graph explorer, legacy console (auth, JSP render, jQuery refresh), and an
+axe-core accessibility gate on every modern page. README screenshots can be
+regenerated with `SCREENSHOTS=1 npx playwright test tests/screenshots.spec.ts`.
+
+### Legacy admin console (M7)
+
+http://localhost:8080/legacy/admin/ — HTTP Basic, dev defaults
+`admin` / `scriptorium-dev` (`LEGACY_ADMIN_USER` / `LEGACY_ADMIN_PASSWORD`
+in `.env`). Read-only per-tenant corpus and graph statistics served as JSP
+by the retrieval service. In Kubernetes the service is ClusterIP-only;
+reach the console via `kubectl port-forward svc/retrieval 8080:8080`.
+
 Service endpoints once up:
 
 | Service | URL |
