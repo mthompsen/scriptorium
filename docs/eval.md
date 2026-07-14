@@ -10,7 +10,8 @@ from a real run — never asserted by hand.
 ## Results
 
 **Retrieval (clean harness, 10 queries, k=5)** — hybrid BM25 + kNN with RRF
-fusion, `nomic-embed-text` embeddings. Stable across every clean run:
+fusion, `nomic-embed-text` embeddings. Stable across every clean run,
+re-confirmed by the final M7 run (2026-07-14): every query at rank 1.
 
 | Metric | Value |
 |---|---|
@@ -22,8 +23,18 @@ fusion, `nomic-embed-text` embeddings. Stable across every clean run:
 | Run | Generator | Judge | Citation coverage | Groundedness |
 |---|---|---|---|---|
 | 2026-07-13 | `llama3.2:3b` (Ollama, CPU) | `llama3.2:3b` (self-judge) | **0.2** | **0.4** |
+| 2026-07-14 (final M7) | `llama3.2:3b` (Ollama, CPU) | `llama3.2:3b` (self-judge) | **0.4667** | **0.0** — see judge-noise note |
 | 2026-07-13 | `qwen2.5:7b` (Ollama, CPU) | `llama3.2:3b` | *infeasible on this hardware* — see note | — |
-| pending | hosted API model via headless CLI | independent local model | awaiting subscription window recovery | — |
+| not run | hosted API model via headless CLI | independent local model | subscription window never recovered inside M7; recorded as an open improvement, not a result | — |
+
+**Judge-noise note (2026-07-14 run):** the self-judge marked all five answers
+ungrounded, including two with perfect citation coverage whose answers were
+verifiably correct against the corpus. Read together with the 2026-07-13 run
+(coverage 0.2, groundedness 0.4), the pair demonstrates the variance of a 3B
+self-judge rather than a regression: coverage more than doubled while the
+judge collapsed to zero. This is exactly why the caveats below say to track
+the trend and swap in an independent, stronger judge before trusting the
+groundedness number.
 
 **qwen2.5:7b infeasibility note (honest negative result):** on this CPU the
 7B model measured ~13 minutes per eval query through the loop (262s for the
