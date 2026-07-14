@@ -25,7 +25,7 @@ re-confirmed by the final M7 run (2026-07-14): every query at rank 1.
 | 2026-07-13 | `llama3.2:3b` (Ollama, CPU) | `llama3.2:3b` (self-judge) | **0.2** | **0.4** |
 | 2026-07-14 (final M7) | `llama3.2:3b` (Ollama, CPU) | `llama3.2:3b` (self-judge) | **0.4667** | **0.0** — see judge-noise note |
 | 2026-07-13 | `qwen2.5:7b` (Ollama, CPU) | `llama3.2:3b` | *infeasible on this hardware* — see note | — |
-| not run | hosted API model via headless CLI | independent local model | subscription window never recovered inside M7; recorded as an open improvement, not a result | — |
+| not run | hosted API model (`LLM_PROVIDER=anthropic` or Bedrock) as generator/judge | independent local model | open improvement path — no API-model run recorded yet | — |
 
 **Judge-noise note (2026-07-14 run):** the self-judge marked all five answers
 ungrounded, including two with perfect citation coverage whose answers were
