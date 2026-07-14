@@ -8,17 +8,12 @@ from scriptorium_llm.base import LLMProvider
 def create_provider(env: dict[str, str] | None = None) -> LLMProvider:
     """Build the configured provider.
 
-    Reads LLM_PROVIDER: ollama (default) | anthropic | bedrock | cli.
+    Reads LLM_PROVIDER: ollama (default) | anthropic | bedrock.
     CHAT_MODEL/EMBED_MODEL override each provider's default models.
     """
     env = env if env is not None else dict(os.environ)
     provider = env.get("LLM_PROVIDER", "ollama").lower()
 
-    if provider == "cli":
-        from scriptorium_llm.cli_provider import CliProvider
-
-        # Subscription-covered generation via the local CLI (host-mode only).
-        return CliProvider(model=env.get("CLI_MODEL") or None)
     if provider == "anthropic":
         from scriptorium_llm.anthropic_api import DEFAULT_CHAT_MODEL, AnthropicProvider
 
@@ -43,6 +38,5 @@ def create_provider(env: dict[str, str] | None = None) -> LLMProvider:
             chat_model=env.get("CHAT_MODEL", "anthropic.claude-3-5-haiku-20241022-v1:0"),
         )
     raise ValueError(
-        f"Unknown LLM_PROVIDER '{provider}' "
-        "(expected: ollama, anthropic, bedrock, cli)"
+        f"Unknown LLM_PROVIDER '{provider}' (expected: ollama, anthropic, bedrock)"
     )
