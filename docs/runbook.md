@@ -47,7 +47,48 @@ Neo4j :7474 (browser) / :7687 (bolt), Ollama :11434.
 Tear down (removes containers, keeps volumes): `docker compose -f
 infra/docker/docker-compose.yml down`. Add `-v` to drop data volumes.
 
-## Cloud
+## Cloud (`infra/terraform`)
 
-Arrives in M6 (Terraform apply/destroy for the AWS stack). This section will
-document the full lifecycle then.
+The AWS stack (VPC, EKS, RDS Postgres, OpenSearch, S3/SQS/Lambda serverless
+ingestion, Bedrock IAM) is **authored and validated but not deployed** — no
+`terraform apply` has run against real AWS (ADR-0008). Costs are not incurred
+until someone runs a cost-approved apply.
+
+### What is validated vs deployed
+
+| Check | How | Status |
+|---|---|---|
+| `terraform fmt` / `validate` | whole stack | ✅ clean |
+| Checkov IaC security scan | whole stack | ✅ 140 passed, 0 failed, 19 justified skips (`docs/security-findings.md`) |
+| Serverless path (S3 → Lambda → SQS) | **LocalStack apply + real S3 upload → SQS message** | ✅ proven end to end, zero cost |
+| `terraform apply`/`destroy` lifecycle | LocalStack (ingestion module) | ✅ 15 added / 16 destroyed |
+| EKS / RDS / OpenSearch live behavior | — | ⛔ never applied; awaits a cost-approved AWS apply |
+
+### Costless serverless proof (LocalStack)
+
+```sh
+docker run -d --name ls -p 4566:4566 -v /var/run/docker.sock:/var/run/docker.sock localstack/localstack:3.8
+cd infra/terraform/localstack
+docker run --rm --network host -v "$PWD/..:/tf" -w /tf/localstack hashicorp/terraform:latest init
+docker run --rm --network host -v "$PWD/..:/tf" -w /tf/localstack hashicorp/terraform:latest apply -auto-approve
+# upload to the raw bucket → the Lambda enqueues a job to the ingestion SQS queue
+docker run --rm --network host -v "$PWD/..:/tf" -w /tf/localstack hashicorp/terraform:latest destroy -auto-approve
+```
+
+### Real AWS apply (⚠️ billable — do not run without cost approval)
+
+```sh
+cd infra/terraform
+export TF_VAR_rds_password="$(aws secretsmanager get-secret-value ... )"  # never commit
+terraform init
+terraform plan            # review the plan first
+terraform apply           # provisions billable resources (EKS, RDS, OpenSearch, NAT)
+# teardown:
+terraform destroy         # empty the raw-uploads bucket first (force_destroy is off by design)
+```
+
+**Rough monthly cost of a live apply** (us-east-1, on-demand, always-on):
+EKS control plane ~$73 + 2× t3.large nodes ~$120 + RDS db.t3.medium Multi-AZ
+~$120 + OpenSearch 2× t3.medium.search ~$100 + 1 NAT gateway ~$32 + storage/
+data ≈ **$450–550/month**. Destroy when idle; the stack is designed to be
+fully `terraform destroy`-able.

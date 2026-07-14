@@ -67,6 +67,21 @@ jobs:
           languages: ${{ matrix.language }}
       - uses: github/codeql-action/analyze@02c5e83432fe5497fd85b873b6c9f16a8578e1d9 # v3
 
+  terraform:
+    name: terraform validate + checkov
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: terraform fmt + validate (no AWS creds needed)
+        run: |
+          docker run --rm -v "$PWD/infra/terraform:/tf" -w /tf hashicorp/terraform:latest fmt -recursive -check
+          docker run --rm -v "$PWD/infra/terraform:/tf" -w /tf hashicorp/terraform:latest init -backend=false -input=false
+          docker run --rm -v "$PWD/infra/terraform:/tf" -w /tf hashicorp/terraform:latest validate
+      - name: checkov IaC scan (gate on findings, honors inline skips)
+        run: |
+          docker run --rm -v "$PWD/infra/terraform:/tf" bridgecrew/checkov:latest \
+            -d /tf --framework terraform --compact --quiet
+
   images:
     name: build, scan, sbom, sign (${{ matrix.service }})
     runs-on: ubuntu-latest

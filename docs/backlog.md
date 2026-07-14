@@ -83,9 +83,20 @@ Section 15; stories are the concrete increments inside each. Status values:
 goes public (private-repo GHAS); the ADO mirror and live Argo CD
 reconciliation await an ADO org / persistent cluster.
 
-## Epic M6 — Cloud + serverless *(todo)*
+## Epic M6 — Cloud + serverless *(done — 2026-07-14)*
 
-Terraform AWS stack · S3 → Lambda → SQS ingestion path · Bedrock provider.
+| Story | Status |
+|---|---|
+| Terraform AWS stack: VPC, EKS, RDS, OpenSearch, S3/SQS/Lambda, Bedrock IAM (ADR-0008) | done — `fmt`/`validate` clean, Checkov 140/0 |
+| Serverless ingestion path (S3 → Lambda → SQS) with tested Lambda handler | done — **proven end to end on LocalStack**, zero cost |
+| `terraform apply`/`destroy` lifecycle | done — LocalStack: 15 added / 16 destroyed |
+| Bedrock provider access (IRSA policy for agent/ingestion) | done (validated) |
+| CI: terraform validate + Checkov gate | done |
+
+**Environment gap (documented, not gamed):** EKS/RDS/OpenSearch are validated
+but **never applied** — a live AWS apply is billable (~$450–550/mo) and awaits
+explicit cost approval (ADR-0008, runbook). The serverless requirement (R4) is
+demonstrated costlessly via LocalStack.
 
 ## Epic M7 — Legacy console + hardening + polish *(todo)*
 
