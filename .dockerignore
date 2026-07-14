@@ -6,7 +6,6 @@ infra/k8s
 infra/terraform
 infra/gitops
 Makefile
-*.local.md
 README.md
 
 # Dependency and build output — never sent to the daemon
