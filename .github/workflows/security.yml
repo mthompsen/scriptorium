@@ -119,12 +119,18 @@ jobs:
 
       - name: push image
         if: github.ref == 'refs/heads/main'
-        run: docker push "$IMAGE:${{ github.sha }}"
+        id: push
+        run: |
+          docker push "$IMAGE:${{ github.sha }}"
+          # Capture the immutable digest so cosign signs the digest, not the
+          # mutable tag (closes the tag-swap gap cosign warns about).
+          digest=$(docker inspect --format='{{index .RepoDigests 0}}' "$IMAGE:${{ github.sha }}")
+          echo "ref=$digest" >> "$GITHUB_OUTPUT"
 
       - name: install cosign
         if: github.ref == 'refs/heads/main'
         uses: sigstore/cosign-installer@d58896d6a1865668819e1d91763c7751a165e159 # v3.9.2
 
-      - name: cosign keyless sign
+      - name: cosign keyless sign (by digest)
         if: github.ref == 'refs/heads/main'
-        run: cosign sign --yes "$IMAGE:${{ github.sha }}"
+        run: cosign sign --yes "${{ steps.push.outputs.ref }}"
