@@ -84,11 +84,16 @@ def build_registry(retrieval, catalog) -> ToolRegistry:
         return ToolResult(output=catalog.list_recent(tenant_id, args.get("limit", 10)))
 
     def query_knowledge_graph(tenant_id: str, args: dict) -> ToolResult:
-        # Stub until M4 (ADR-0005): schema-stable, swaps to Neo4j later.
+        hits = retrieval.graph_search(tenant_id, args["entity"])
+        if not hits:
+            return ToolResult(output={"results": [], "note": "no matching entities"})
+        top = hits[0]
+        neighborhood = retrieval.graph_neighborhood(tenant_id, top["id"])
         return ToolResult(
             output={
-                "results": [],
-                "note": "the knowledge graph is not available yet (arrives in M4)",
+                "entity": top,
+                "nodes": neighborhood.get("nodes", []),
+                "edges": neighborhood.get("edges", []),
             }
         )
 
@@ -144,8 +149,10 @@ def build_registry(retrieval, catalog) -> ToolRegistry:
             Tool(
                 name="query_knowledge_graph",
                 description=(
-                    "Query the knowledge graph for an entity and its relations. "
-                    "Not yet populated; becomes useful in M4."
+                    "Look up an entity in the knowledge graph and return its "
+                    "relations to other entities (who owns what, what depends "
+                    "on what). Useful for questions about connections between "
+                    "people, policies, and systems."
                 ),
                 input_schema={
                     "type": "object",

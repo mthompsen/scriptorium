@@ -27,3 +27,21 @@ class RetrievalClient:
         )
         response.raise_for_status()
         return response.json()["chunks"]
+
+    def graph_search(self, tenant_id: str, query: str) -> list[dict]:
+        response = requests.get(
+            f"{self._base_url}/graph/search",
+            params={"tenant_id": tenant_id, "q": query},
+            timeout=self._timeout_s,
+        )
+        response.raise_for_status()
+        return response.json()["entities"]
+
+    def graph_neighborhood(self, tenant_id: str, entity_id: str) -> dict:
+        response = requests.get(
+            f"{self._base_url}/graph/entity/{entity_id}/neighborhood",
+            params={"tenant_id": tenant_id},
+            timeout=self._timeout_s,
+        )
+        response.raise_for_status()
+        return response.json()

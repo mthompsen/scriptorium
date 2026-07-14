@@ -8,6 +8,9 @@ CHUNK = {"chunk_id": "ab12cd34-0", "document_id": "doc-1", "text": "PTO is 25 da
 class FakeRetrieval:
     def __init__(self) -> None:
         self.calls: list[tuple] = []
+        self.entities: list[dict] = [
+            {"id": "abc123", "name": "Aurelia Corp", "type": "organization", "mention_count": 4}
+        ]
 
     def retrieve(self, tenant_id, query, k):
         self.calls.append(("retrieve", tenant_id, query, k))
@@ -16,6 +19,22 @@ class FakeRetrieval:
     def fetch_chunks(self, tenant_id, document_id, from_ordinal, to_ordinal):
         self.calls.append(("fetch_chunks", tenant_id, document_id, from_ordinal, to_ordinal))
         return [CHUNK]
+
+    def graph_search(self, tenant_id, query):
+        self.calls.append(("graph_search", tenant_id, query))
+        return self.entities
+
+    def graph_neighborhood(self, tenant_id, entity_id):
+        self.calls.append(("graph_neighborhood", tenant_id, entity_id))
+        return {
+            "nodes": [
+                {"id": "abc123", "name": "Aurelia Corp", "type": "organization"},
+                {"id": "def456", "name": "PTO Policy", "type": "policy"},
+            ],
+            "edges": [
+                {"source": "abc123", "target": "def456", "relation": "owns", "confidence": 0.9}
+            ],
+        }
 
 
 class FakeCatalog:
@@ -69,12 +88,27 @@ def test_tenant_scope_is_injected_server_side() -> None:
     assert retrieval.calls[0][1] == "tenant-1"
 
 
-def test_graph_tool_is_a_schema_stable_stub(registry) -> None:
+def test_graph_tool_searches_then_expands_the_top_entity() -> None:
+    retrieval = FakeRetrieval()
+    registry = build_registry(retrieval, FakeCatalog())
+
     result = registry.execute("tenant-1", "query_knowledge_graph", {"entity": "Aurelia"})
 
-    assert result.output["results"] == []
-    assert "M4" in result.output["note"]
-    assert result.chunks == []
+    assert result.output["entity"]["name"] == "Aurelia Corp"
+    assert len(result.output["edges"]) == 1
+    assert result.output["edges"][0]["relation"] == "owns"
+    assert ("graph_search", "tenant-1", "Aurelia") in retrieval.calls
+    assert ("graph_neighborhood", "tenant-1", "abc123") in retrieval.calls
+
+
+def test_graph_tool_reports_no_matches_cleanly() -> None:
+    retrieval = FakeRetrieval()
+    retrieval.entities = []
+    registry = build_registry(retrieval, FakeCatalog())
+
+    result = registry.execute("tenant-1", "query_knowledge_graph", {"entity": "Nobody"})
+
+    assert result.output == {"results": [], "note": "no matching entities"}
 
 
 def test_definitions_expose_all_four_tools(registry) -> None:
