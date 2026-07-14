@@ -3,8 +3,9 @@
 Enterprise knowledge intelligence platform: it ingests an organization's
 documents, builds a hybrid vector index and a knowledge graph over them, and
 answers questions through a tool-using AI agent that returns grounded, cited
-answers. Multi-tenant, role-based, fully audited, with guardrails on the
-agent and an evaluation harness for retrieval and generation quality.
+answers. Multi-tenant and role-based, with server-side tenant isolation and
+full tracing of every AI interaction, guardrails on the agent, and an
+evaluation harness for retrieval and generation quality.
 
 This is a portfolio project built against a specific full-stack + GenAI role;
 the [requirements traceability](#requirements-traceability) tables below map
@@ -41,7 +42,7 @@ flowchart TB
     AGT[Agent Orchestrator<br/>Flask · Python]
   end
 
-  subgraph serverless [Event-driven ingestion]
+  subgraph serverless [Event-driven ingestion · LocalStack-only]
     S3[(Object Store / S3)]
     LAM[Lambda trigger]
     SQS[[SQS queue]]
@@ -50,7 +51,6 @@ flowchart TB
   subgraph data [Data Stores]
     PG[(PostgreSQL<br/>relational)]
     MG[(MongoDB<br/>documents / chunks)]
-    RD[(Redis<br/>cache / sessions)]
     OS[(OpenSearch<br/>lexical + vector)]
     NEO[(Neo4j<br/>knowledge graph)]
   end
@@ -64,9 +64,9 @@ flowchart TB
   BFF --> AGT
   BFF --> ING
   BFF --> PG
-  BFF --> RD
 
-  S3 --> LAM --> SQS --> ING
+  S3 --> LAM --> SQS
+  ING --> PG
   ING --> MG
   ING --> OS
   ING --> NEO
@@ -80,8 +80,10 @@ flowchart TB
   RET --> NEO
 ```
 
-- **BFF (NestJS)** — the only edge: JWT auth, tenant scoping, rate limits,
-  SSE streaming to the browser.
+- **BFF (NestJS)** — the only edge: JWT auth, tenant scoping, the RBAC upload
+  gate, per-IP rate limits (in-memory per instance — exact at the
+  single-replica quickstart stack; holding per-IP across the multi-replica
+  overlays would need shared/Redis storage), SSE streaming to the browser.
 - **Ingestion (Flask)** — parse → chunk → embed → index to OpenSearch,
   extract entities/relations to Neo4j, store documents/chunks in MongoDB.
 - **Retrieval (Spring Boot/Gradle)** — hybrid BM25 + kNN with reciprocal
@@ -164,7 +166,7 @@ demonstrate; they are listed for completeness.
 | R2 | Full stack, frontend + backend, incl. Angular/React/Next.js and JS/TS/HTML5/CSS3 | `frontend/` | Next.js + React + TypeScript app: streaming chat, document library, knowledge-graph explorer, admin. HTML5 semantics + CSS3 via Tailwind, plus a Bootstrap-based legacy console (see RP5). |
 | R3 | Backend in Node.js, Python (Django/Flask), or Java (Spring Boot) | `services/bff` (Node), `services/ingestion` + `services/agent` (Python/Flask), `services/retrieval` (Java/Spring Boot) | All three stacks used deliberately, each with a distinct responsibility (ARCHITECTURE.md Section 7). |
 | R4 | Build and consume REST APIs; microservices or serverless in production | All `services/*`; `infra/terraform` | REST across every service with contract tests (Pact) between BFF and retrieval. Four-service microservice topology. Serverless ingestion trigger: S3 upload → Lambda → SQS — **proven end to end on LocalStack** (see status table). |
-| R5 | Relational DB + at least 1 NoSQL; Git; Azure DevOps or similar; Docker; Agile/Scrum; automated testing; CI/CD | Data layer + `infra/` + `.github/` + `azure-pipelines.yml` + `docs/backlog.md` | Postgres (relational); MongoDB and Redis (NoSQL). Git with Conventional Commits. CI/CD in GitHub Actions (executed) and an Azure DevOps mirror (authored — see status table). Docker for every service. Agile backlog per milestone. Test pyramid: unit, integration, contract, e2e, AI eval (ARCHITECTURE.md Section 13). |
+| R5 | Relational DB + at least 1 NoSQL; Git; Azure DevOps or similar; Docker; Agile/Scrum; automated testing; CI/CD | Data layer + `infra/` + `.github/` + `azure-pipelines.yml` + `docs/backlog.md` | Postgres (relational); MongoDB (NoSQL). Git with Conventional Commits. CI/CD in GitHub Actions (executed) and an Azure DevOps mirror (authored — see status table). Docker for every service. Agile backlog per milestone. Test pyramid: unit, integration, contract, e2e, AI eval (ARCHITECTURE.md Section 13). |
 | R6 | Develop/integrate/deploy AI, GenAI, or agentic AI in enterprise apps on AWS/Azure/GCP | `services/agent`, `services/ingestion`, `packages/llm`, `infra/terraform` | RAG pipeline + bounded agentic tool-use loop with guardrails, tracing, and an eval harness. Provider-agnostic LLM layer (Ollama local, Bedrock, Anthropic API). AWS target authored in Terraform with Bedrock IAM — validated, not applied (see status table). |
 | R7 | Ability to travel ~20% | *Candidate attribute.* | — |
 | R8 | Limited immigration sponsorship may be available | *Employer term.* | — |
@@ -173,7 +175,7 @@ demonstrate; they are listed for completeness.
 
 | # | Requirement | Where demonstrated | How |
 |---|---|---|---|
-| RP1 | OOP, design patterns, clean coding | Throughout + `docs/adr/` | NestJS and Spring Boot are OOP + DI heavy. Patterns applied intentionally and named in code/ADRs: Adapter/Strategy (LLM providers), Repository, ports-and-adapters (service internals), CQRS-lite (write/read split), Circuit-breaker-style degradation (graph fallback). Lint/format gates and ten ADRs enforce the discipline. |
+| RP1 | OOP, design patterns, clean coding | Throughout + `docs/adr/` | NestJS and Spring Boot are OOP + DI heavy. Patterns applied intentionally and named in code/ADRs: Adapter/Strategy (LLM providers), Repository, ports-and-adapters (service internals), CQRS-lite (write/read split), Circuit-breaker-style degradation (graph fallback). Lint/format gates and the ADRs in `docs/adr/` enforce the discipline. |
 | RP2 | Secure, reusable, responsive, maintainable apps | Cross-cutting; `packages/` | Controls per `docs/security.md`; shared `packages/llm` and contracts; responsive + accessible UI (axe-core gate in e2e); tests, typed contracts, ADRs. |
 | RP3 | Secure dev, DevOps, DevSecOps, web security, GitOps, Kubernetes customization | `.github/`, `infra/k8s`, `infra/gitops` | DevSecOps pipeline: Semgrep (+custom rules), gitleaks, Trivy (fs + images), SBOM (Syft), cosign keyless signing, findings gate; CodeQL SAST live in CI (see status table). Kustomize base + dev/staging/prod overlays; Argo CD manifests + staging tag-bump automation; Kyverno signed-image admission policy. |
 | RP4 | OpenSearch, Elasticsearch, Neo4j, Memgraph, Maven, or Gradle | `services/retrieval`, data layer | OpenSearch hybrid (lexical + vector) retrieval; Neo4j knowledge graph with parameterized Cypher; Spring Boot service built with Gradle. |
@@ -198,8 +200,9 @@ it has actually executed.
 | **GitOps (Argo CD)** | **Authored, not executing.** Application manifests and the staging image tag-bump automation are in place and validated with `kustomize build`; no persistent cluster exists for Argo CD to reconcile against (ADR-0007). |
 | **Azure DevOps pipeline** | **Authored and schema-valid, never executed** — no ADO organization. The executed pipeline of record is GitHub Actions (ADR-0007). |
 | **AWS stack (Terraform: VPC, EKS, RDS, OpenSearch, Bedrock IAM)** | **Validated, never applied.** `terraform fmt`/`validate` clean; Checkov 140 passed / 0 failed / 19 justified skips. A live apply is billable (~$450–550/mo) and deferred pending explicit cost approval (ADR-0008). |
-| **Serverless ingestion (S3 → Lambda → SQS)** | **Applied and exercised on LocalStack** — a real upload firing the real Lambda enqueuing a real SQS message, at zero cost. Not executed against real AWS (same cost gate). |
-| **Playwright e2e** | **Runs live locally** against the compose stack (8/8 passing, including an axe-core accessibility gate). Not run in CI: the stack needs a multi-GB model pull and CPU LLM inference beyond hosted-runner timeouts (ADR-0009). |
+| **Serverless ingestion (S3 → Lambda → SQS)** | **Trigger applied and exercised on LocalStack** — a real upload firing the real Lambda enqueuing a real SQS message, at zero cost. The queue is populated but **not drained**: no SQS-consuming ingestion worker exists, and the local compose stack ingests via the synchronous `/ingest` path. Not executed against real AWS (same cost gate). |
+| **Redis** | **Provisioned, not connected.** The compose stack and k8s manifests run a Redis container, but no service constructs a client — there is no cache or session code (auth is stateless JWT) and rate limiting is in-memory in the BFF, not Redis. Kept as provisioned infrastructure for a future use, the natural one being shared rate-limit storage so per-IP limits hold across BFF replicas. |
+| **Playwright e2e** | **Runs live locally** against the compose stack: login→upload→grounded answer, graph explorer, legacy console, the RBAC upload gate, and an axe-core accessibility gate. Not run in CI: the stack needs a multi-GB model pull and CPU LLM inference beyond hosted-runner timeouts (ADR-0009). Model-quality numbers (e.g. citation rate) live in `docs/eval.md`, not in this journey's assertions. |
 | **AI evaluation** | **Runs live locally** (`scripts/run-eval.ps1`); every number in `docs/eval.md` comes from a real run, with the hardware caveat below. |
 
 ## Evaluation results
@@ -228,11 +231,14 @@ finding-by-finding triage ledger in
 [docs/security-findings.md](docs/security-findings.md) (33 HIGH/CRITICAL +
 8 SAST findings driven to zero, no blanket waivers). Application controls
 include parameterized queries everywhere (SQL, Cypher, OpenSearch DSL),
-server-side tenant scoping, security headers (nosniff + frame protection on
-both origins, HSTS on the BFF; CSP is `frame-ancestors` only — no
-`script-src` policy), per-IP rate limits (tighter on login), and the
-GenAI-specific set: prompt-injection handling, tool allowlisting, citation
-validation, refusal on empty retrieval, PII filter hook.
+server-side tenant scoping, a coarse RBAC gate (viewer cannot upload),
+security headers (nosniff + frame protection on both origins, HSTS on the
+BFF; CSP is `frame-ancestors` only — no `script-src` policy), per-IP rate
+limits (tighter on login; in-memory per instance — exact at the
+single-replica quickstart stack, and would need shared/Redis storage to hold
+per-IP across the multi-replica overlays), and the GenAI-specific set:
+prompt-injection handling, tool allowlisting, citation validation, refusal on
+empty retrieval, PII filter hook.
 
 ## Testing
 

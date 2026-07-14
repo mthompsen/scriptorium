@@ -1,10 +1,12 @@
 """S3 -> Lambda -> SQS ingestion trigger (ARCHITECTURE.md Sections 9.1, 14.5).
 
 An object landing in the raw-uploads bucket fires this Lambda, which enqueues
-one ingestion job per object onto the SQS queue the ingestion worker
-consumes. Keeping the Lambda thin (translate event -> job message) means the
-heavy pipeline stays in the ingestion service; the Lambda is just the
-event-driven front door that replaces the M1 synchronous call (ADR-0003).
+one ingestion job per object onto the SQS queue. Keeping the Lambda thin
+(translate event -> job message) means any heavy work would stay in the
+ingestion service. Note: no SQS-consuming worker is implemented today — the
+queue is populated but not drained; the local compose stack ingests via the
+synchronous /ingest path. This trigger (S3 -> Lambda -> SQS) is exercised on
+LocalStack (ADR-0008); the consumer is future work.
 """
 
 import json

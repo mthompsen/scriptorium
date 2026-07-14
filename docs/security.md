@@ -62,6 +62,9 @@ grows with the system; the full threat model and DevSecOps pipeline land in M5.
 - AuthZ/tenancy: tenant scope derived server-side from the JWT via a
   request-scoped `TenantContext`; every SQL query filters by `tenant_id`;
   chat sessions additionally scoped to the owning user.
+- Role gate: roles come from Postgres via the JWT; the BFF enforces one
+  coarse gate — a viewer cannot upload documents (`RolesGuard`, proven by
+  e2e). No service performs fine-grained per-role checks (ADR-0010).
 - Input validation: DTO validation (class-validator, whitelist +
   forbidNonWhitelisted) in the BFF; UUID/form validation in ingestion.
 - Parameterized queries only (node-postgres and psycopg placeholders).

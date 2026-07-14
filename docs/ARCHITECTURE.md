@@ -41,8 +41,8 @@ This is the spine of the project. Every required and preferred qualification map
 | R1 | Bachelor's in CS or similar technical field | *Candidate attribute.* Whole system demonstrates applied CS: distributed systems, retrieval algorithms, graph modeling, ranking. | Pairs with the candidate's CS degree track. |
 | R2 | Full stack, frontend + backend, incl. Angular/React/Next.js and JS/TS/HTML5/CSS3 | `frontend/` | Next.js + React + TypeScript app: streaming chat, document library, knowledge-graph explorer, admin and analytics dashboards. HTML5 semantics + CSS3 via Tailwind, plus a Bootstrap-based legacy console (see R-P5). |
 | R3 | Backend in Node.js, Python (Django/Flask), or Java (Spring Boot) | `services/bff` (Node), `services/ingestion` + `services/agent` (Python/Flask), `services/retrieval` (Java/Spring Boot) | All three stacks used deliberately, each with a distinct responsibility. See Section 7. |
-| R4 | Build and consume REST APIs; microservices or serverless in production | All `services/*`; `infra/terraform` serverless stack | REST across every service with OpenAPI contracts (`packages/contracts`). Four-service microservice topology. Serverless ingestion trigger: S3 upload → Lambda → SQS → ingestion worker. Production-grade via containerization + Kubernetes. |
-| R5 | Relational DB + at least 1 NoSQL; Git; Azure DevOps or similar; Docker; Agile/Scrum; automated testing; CI/CD | Data layer + `infra/` + `.github/` + `azure-pipelines.yml` + `docs/backlog.md` | Postgres (relational); MongoDB and Redis (NoSQL). Git with Conventional Commits. CI/CD in both GitHub Actions and an Azure DevOps pipeline. Docker for every service. Agile backlog and sprint plan (Section 15, `docs/backlog.md`). Full test pyramid (Section 13). |
+| R4 | Build and consume REST APIs; microservices or serverless in production | All `services/*`; `infra/terraform` serverless stack | REST across every service with OpenAPI contracts (`packages/contracts`). Four-service microservice topology. Serverless ingestion trigger: S3 upload → Lambda → SQS (trigger proven on LocalStack; no SQS consumer implemented yet — see §8.3 and the README status table). Production-grade via containerization + Kubernetes. |
+| R5 | Relational DB + at least 1 NoSQL; Git; Azure DevOps or similar; Docker; Agile/Scrum; automated testing; CI/CD | Data layer + `infra/` + `.github/` + `azure-pipelines.yml` + `docs/backlog.md` | Postgres (relational); MongoDB (NoSQL — Redis is provisioned but not yet connected, see §8.3). Git with Conventional Commits. CI/CD in both GitHub Actions and an Azure DevOps pipeline. Docker for every service. Agile backlog and sprint plan (Section 15, `docs/backlog.md`). Full test pyramid (Section 13). |
 | R6 | Develop/integrate/deploy AI, GenAI, or agentic AI in enterprise apps on AWS/Azure/GCP | `services/agent`, `services/ingestion`, `packages/llm`, `infra/terraform` | RAG pipeline + agentic orchestration loop. Provider-agnostic LLM layer with adapters for AWS Bedrock, Azure OpenAI, and Google Vertex. Enterprise concerns: tenant isolation, RBAC, audit, guardrails, eval harness. Deployed to AWS as primary target via Terraform. |
 | R7 | Ability to travel ~20% | *Candidate attribute.* Not applicable to the build. | — |
 | R8 | Limited immigration sponsorship may be available | *Employer term.* Not applicable to the build. | — |
@@ -83,7 +83,7 @@ Scriptorium separates the **write path** (turning documents into indexed, graph-
 - The **ingestion service** (Flask) is the write path: chunk, embed, index to OpenSearch, extract entities and relations to Neo4j, store raw documents and chunks in MongoDB.
 - The **retrieval service** (Spring Boot) is the read path: hybrid search over OpenSearch, graph queries over Neo4j, reranking, and returning assembled context. It also hosts the legacy admin console.
 - The **agent service** (Flask) is the reason path: a tool-using agent loop that calls retrieval and graph tools, synthesizes a grounded answer via the LLM layer, applies guardrails, and streams tokens back.
-- **Postgres** holds all relational state (tenants, users, roles, document registry, chat sessions and messages, audit log, agent run traces). **Redis** provides caching, rate limiting, and session state. **OpenSearch** and **Neo4j** back retrieval.
+- **Postgres** holds all relational state (tenants, users, roles, document registry, chat sessions and messages, agent run traces). **OpenSearch** and **Neo4j** back retrieval. (Redis is provisioned in the stack but not yet connected — see §8.3.)
 
 ### 4.1 Container diagram
 
@@ -103,7 +103,7 @@ flowchart TB
     AGT[Agent Orchestrator<br/>Flask · Python]
   end
 
-  subgraph serverless [Event-driven ingestion]
+  subgraph serverless [Event-driven ingestion · LocalStack-only]
     S3[(Object Store / S3)]
     LAM[Lambda trigger]
     SQS[[SQS queue]]
@@ -112,7 +112,6 @@ flowchart TB
   subgraph data [Data Stores]
     PG[(PostgreSQL<br/>relational)]
     MG[(MongoDB<br/>documents / chunks)]
-    RD[(Redis<br/>cache / sessions)]
     OS[(OpenSearch<br/>lexical + vector)]
     NEO[(Neo4j<br/>knowledge graph)]
   end
@@ -126,9 +125,9 @@ flowchart TB
   BFF --> AGT
   BFF --> ING
   BFF --> PG
-  BFF --> RD
 
-  S3 --> LAM --> SQS --> ING
+  S3 --> LAM --> SQS
+  ING --> PG
   ING --> MG
   ING --> OS
   ING --> NEO
@@ -159,7 +158,7 @@ Versions are the intended baseline; patch versions may be bumped when a security
 | Retrieval | Spring Boot (Java) built with Gradle | Boot 3.4.x, Java 21, Gradle 8.x | R3 (Spring Boot); Gradle (RP4). Hosts JSP legacy console (RP5). |
 | Relational DB | PostgreSQL | 16 | R5 relational. |
 | Document store | MongoDB | 7 | R5 NoSQL. |
-| Cache / sessions | Redis | 7 | R5 NoSQL (second store), rate limiting. |
+| Cache / sessions (provisioned) | Redis | 7 | Provisioned, not yet wired — see §8.3. MongoDB alone carries R5's NoSQL requirement. |
 | Search + vectors | OpenSearch | 2.15+ | RP4; RAG retrieval (R6). |
 | Knowledge graph | Neo4j | 5.x | RP4; graph-augmented retrieval. |
 | LLM providers | AWS Bedrock, Azure OpenAI, Google Vertex, Ollama (local) | — | R6 multi-cloud; local mode for laptop demos. |
@@ -338,9 +337,9 @@ Schema-flexible payloads that do not belong in a relational schema: the raw extr
 }
 ```
 
-### 8.3 Redis — cache, sessions, rate limiting
+### 8.3 Redis — provisioned, not yet connected
 
-Retrieval result caching keyed by (tenant, query hash), token-bucket rate limiting at the BFF, and ephemeral SSE stream state. Justifies the "at least one NoSQL" requirement a second time in a different model (key-value), and keeps the demo responsive.
+Redis runs in the compose stack and the Kubernetes manifests, but no service currently constructs a client. There is no cache or session code (authentication is stateless JWT in an HttpOnly cookie), and rate limiting is in-memory in the BFF (`@nestjs/throttler`), not Redis. Redis is kept as provisioned infrastructure for a future use — the natural one being shared rate-limit storage so per-IP limits hold across BFF replicas. Until it is wired, it does not satisfy the "at least one NoSQL" requirement; MongoDB (§8.2) does.
 
 ### 8.4 OpenSearch — hybrid retrieval
 
@@ -528,7 +527,7 @@ Next.js App Router, React, TypeScript, Tailwind. Responsive and accessible (sema
 
 **AuthN.** JWT issued by the BFF (email/password for the demo; note in the README that production would federate SSO). Short-lived access tokens; tenant id and roles as claims.
 
-**AuthZ.** RBAC with roles owner/admin/member/viewer. Coarse checks at the BFF, fine-grained checks in services where needed. Every data query is tenant-filtered; tenant scope is derived server-side from the token and never trusted from the client.
+**AuthZ.** RBAC with roles owner/admin/member/viewer, sourced from Postgres and carried as JWT claims. The BFF enforces one coarse role gate today — a viewer cannot upload documents (`RolesGuard`, proven by e2e); no service performs fine-grained per-role checks. Every data query is tenant-filtered; tenant scope is derived server-side from the token and never trusted from the client (ADR-0010).
 
 **Config.** Twelve-factor: all config via environment, no secrets in code, `.env.example` documents every variable. Secrets from the cloud secret manager in deployed mode; gitleaks guards against accidental commits (RP3).
 
@@ -545,7 +544,7 @@ A lightweight threat model plus a concrete control list. This section plus the p
 - Parameterized queries only, across SQL, Cypher, and OpenSearch DSL. No string-built queries.
 - AuthZ enforced server-side; no trust in client-supplied tenant or role.
 - Security headers on both origins: `X-Content-Type-Options: nosniff` and frame protection (`X-Frame-Options` / CSP `frame-ancestors`) on the BFF (helmet) and the Next.js app; HSTS on the BFF (only meaningful over HTTPS). The CSP is `frame-ancestors` only — there is no `script-src` policy on either origin, because a strict script CSP on the Next App Router requires a per-request nonce that would force dynamic rendering.
-- Rate limiting and request size limits at the BFF.
+- Rate limiting and request size limits at the BFF. Rate-limit buckets are in-memory per instance (`@nestjs/throttler`) — exact at the single-replica stack the quickstart runs; holding per-IP across the 2–3 replica staging/prod overlays would need shared (Redis) storage.
 - Secrets are kept out of logs by practice (no secret values are logged in the current code). Structured field-level log scrubbing is aspirational — not yet implemented.
 - The GenAI-specific controls in Section 9.2 (prompt-injection handling, tool allowlisting, output validation).
 
