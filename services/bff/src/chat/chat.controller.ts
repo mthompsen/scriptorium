@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  HttpException,
+  Logger,
   Param,
   ParseUUIDPipe,
   Post,
@@ -19,6 +21,8 @@ import { CreateSessionDto, SendMessageDto } from './dto/chat.dto';
 @Controller('chat/sessions')
 @UseGuards(JwtAuthGuard)
 export class ChatController {
+  private readonly logger = new Logger(ChatController.name);
+
   constructor(private readonly chat: ChatService) {}
 
   @Post()
@@ -63,7 +67,14 @@ export class ChatController {
         }
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'stream failed';
+      // Only surface our own HttpException messages (server-authored, safe
+      // constants). Anything raised by library internals inside the
+      // for-await — e.g. a JSON.parse SyntaxError echoing malformed,
+      // LLM-influenced SSE frame content — is logged server-side and
+      // reported as a generic constant, so no unbounded exception text
+      // reaches the client.
+      this.logger.error('chat stream failed', error instanceof Error ? error.stack : error);
+      const message = error instanceof HttpException ? error.message : 'stream failed';
       res.write(`event: error\ndata: ${JSON.stringify({ message })}\n\n`);
     } finally {
       res.end();
