@@ -122,12 +122,21 @@ def build_registry(retrieval, catalog) -> ToolRegistry:
             return ToolResult(output={"results": [], "note": "no matching entities"})
         top = hits[0]
         neighborhood = retrieval.graph_neighborhood(tenant_id, top["id"])
+        # Ground graph answers in citable chunks: retrieve the entity's
+        # supporting passages so the final answer can cite chunk_ids
+        # (Section 9.2's answer contract) instead of being refused for
+        # having surfaced no chunks.
+        supporting = retrieval.retrieve(tenant_id, top["name"], 3)
         return ToolResult(
             output={
                 "entity": top,
                 "nodes": neighborhood.get("nodes", []),
                 "edges": neighborhood.get("edges", []),
-            }
+                "supporting_chunks": [
+                    {"chunk_id": c["chunk_id"], "text": c["text"][:500]} for c in supporting
+                ],
+            },
+            chunks=supporting,
         )
 
     return ToolRegistry(

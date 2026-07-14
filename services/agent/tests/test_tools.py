@@ -140,6 +140,19 @@ def test_graph_tool_searches_then_expands_the_top_entity() -> None:
     assert ("graph_neighborhood", "tenant-1", "abc123") in retrieval.calls
 
 
+def test_graph_tool_surfaces_citable_supporting_chunks() -> None:
+    """Regression: graph-only answers were refused because the tool yielded
+    no chunks — the grounding guardrail requires citable passages."""
+    retrieval = FakeRetrieval()
+    registry = build_registry(retrieval, FakeCatalog())
+
+    result = registry.execute("tenant-1", "query_knowledge_graph", {"entity": "Aurelia"})
+
+    assert result.chunks == [CHUNK]  # citation validation can now resolve these
+    assert result.output["supporting_chunks"][0]["chunk_id"] == CHUNK["chunk_id"]
+    assert ("retrieve", "tenant-1", "Aurelia Corp", 3) in retrieval.calls
+
+
 def test_graph_tool_reports_no_matches_cleanly() -> None:
     retrieval = FakeRetrieval()
     retrieval.entities = []
