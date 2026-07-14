@@ -6,21 +6,31 @@ kind: Kustomization
 namespace: scriptorium-staging
 
 resources:
-  - ../../base
+- ../../base
 
 patches:
-  - target: { kind: Namespace, name: scriptorium }
-    patch: |
-      - { op: replace, path: /metadata/name, value: scriptorium-staging }
+- patch: |
+    - { op: replace, path: /metadata/name, value: scriptorium-staging }
+  target:
+    kind: Namespace
+    name: scriptorium
 
 replicas:
-  - { name: bff, count: 2 }
-  - { name: frontend, count: 2 }
-  - { name: retrieval, count: 2 }
+- count: 2
+  name: bff
+- count: 2
+  name: frontend
+- count: 2
+  name: retrieval
 
 images:
-  - { name: ghcr.io/mthompsen/scriptorium-bff, newTag: staging }
-  - { name: ghcr.io/mthompsen/scriptorium-frontend, newTag: staging }
-  - { name: ghcr.io/mthompsen/scriptorium-ingestion, newTag: staging }
-  - { name: ghcr.io/mthompsen/scriptorium-agent, newTag: staging }
-  - { name: ghcr.io/mthompsen/scriptorium-retrieval, newTag: staging }
+- name: ghcr.io/mthompsen/scriptorium-agent
+  newTag: 8a603eabac9dcb9994c309d98300dd751c469e54
+- name: ghcr.io/mthompsen/scriptorium-bff
+  newTag: 8a603eabac9dcb9994c309d98300dd751c469e54
+- name: ghcr.io/mthompsen/scriptorium-frontend
+  newTag: 8a603eabac9dcb9994c309d98300dd751c469e54
+- name: ghcr.io/mthompsen/scriptorium-ingestion
+  newTag: 8a603eabac9dcb9994c309d98300dd751c469e54
+- name: ghcr.io/mthompsen/scriptorium-retrieval
+  newTag: 8a603eabac9dcb9994c309d98300dd751c469e54
