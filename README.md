@@ -227,7 +227,9 @@ finding-by-finding triage ledger in
 [docs/security-findings.md](docs/security-findings.md) (33 HIGH/CRITICAL +
 8 SAST findings driven to zero, no blanket waivers). Application controls
 include parameterized queries everywhere (SQL, Cypher, OpenSearch DSL),
-server-side tenant scoping, security headers, rate limits, and the
+server-side tenant scoping, security headers (nosniff + frame protection on
+both origins, HSTS on the BFF; CSP is `frame-ancestors` only — no
+`script-src` policy), per-IP rate limits (tighter on login), and the
 GenAI-specific set: prompt-injection handling, tool allowlisting, citation
 validation, refusal on empty retrieval, PII filter hook.
 

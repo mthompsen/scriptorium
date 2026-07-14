@@ -544,7 +544,7 @@ A lightweight threat model plus a concrete control list. This section plus the p
 - Input validation at every boundary (DTO validation in Nest, schema validation in Flask, bean validation in Spring).
 - Parameterized queries only, across SQL, Cypher, and OpenSearch DSL. No string-built queries.
 - AuthZ enforced server-side; no trust in client-supplied tenant or role.
-- Security headers (CSP, HSTS, X-Content-Type-Options, frame options) at the edge.
+- Security headers on both origins: `X-Content-Type-Options: nosniff` and frame protection (`X-Frame-Options` / CSP `frame-ancestors`) on the BFF (helmet) and the Next.js app; HSTS on the BFF (only meaningful over HTTPS). The CSP is `frame-ancestors` only — there is no `script-src` policy on either origin, because a strict script CSP on the Next App Router requires a per-request nonce that would force dynamic rendering.
 - Rate limiting and request size limits at the BFF.
 - Secrets are kept out of logs by practice (no secret values are logged in the current code). Structured field-level log scrubbing is aspirational — not yet implemented.
 - The GenAI-specific controls in Section 9.2 (prompt-injection handling, tool allowlisting, output validation).
