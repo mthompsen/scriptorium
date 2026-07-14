@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 
 import { AuthService, LoginResult } from './auth.service';
@@ -16,6 +17,9 @@ export class AuthController {
     private readonly config: ConfigService,
   ) {}
 
+  // Tight per-IP limit on the one endpoint that does authentication work:
+  // slows credential stuffing where the global 120/min ceiling would not.
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
   @Post('login')
   async login(
     @Body() dto: LoginDto,

@@ -14,6 +14,14 @@ async function bootstrap(): Promise<void> {
   // (a separate origin), and CORS-enabled fetches are unaffected by the
   // same-origin CORP default.
   app.use(helmet());
+  // Behind a reverse proxy / load balancer (cloud), trust the first proxy hop
+  // so express reads the client IP from X-Forwarded-For — the rate limiter
+  // keys on it. Off locally (TRUST_PROXY unset): the compose stack connects
+  // directly, and trusting a spoofable header without a proxy in front would
+  // let a client forge its rate-limit identity.
+  if (process.env.TRUST_PROXY === 'true') {
+    app.getHttpAdapter().getInstance().set('trust proxy', 1);
+  }
   app.use(cookieParser());
   // Reject unknown fields at the edge (input validation, Section 12).
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
