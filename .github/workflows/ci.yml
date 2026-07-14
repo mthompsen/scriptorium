@@ -27,6 +27,11 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm test
+      # Consumer tests regenerate the pact; a dirty diff means the committed
+      # contract is stale (ADR-0006).
+      - name: pact drift check
+        if: matrix.dir == 'services/bff'
+        run: git diff --exit-code ../../packages/contracts/pacts
 
   python:
     name: ${{ matrix.dir }} (python)

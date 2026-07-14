@@ -23,6 +23,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.neo4j.driver:neo4j-java-driver:5.28.0'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'au.com.dius.pact.provider:junit5:4.6.17'
 }
 
 tasks.named('test') {
