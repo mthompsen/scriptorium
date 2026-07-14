@@ -3,6 +3,23 @@
 Scope and intent are defined in `docs/DESIGN.md` Section 12. This document
 grows with the system; the full threat model and DevSecOps pipeline land in M5.
 
+## Controls in place (M5) — DevSecOps pipeline
+
+- SAST: Semgrep (`p/default` community + custom `.semgrep.yml` rules —
+  parameterized-Cypher-only, no-tenant-from-request-body); CodeQL wired but
+  visibility-gated (private-repo GHAS limit, ADR-0007).
+- Dependency + container scanning: Trivy (HIGH/CRITICAL, `--ignore-unfixed`,
+  gating) on lockfiles and every built image; Dependabot for update PRs.
+- Secret scanning: gitleaks in CI and as a pre-commit hook.
+- SBOM: Syft per image, published as a build artifact.
+- Image signing: cosign keyless (GitHub OIDC); Kyverno admission policy
+  verifies signatures for staging/prod.
+- Findings gate fails CI on any HIGH/CRITICAL (Trivy), ERROR (Semgrep), or
+  secret (gitleaks). The full triage of the first scan pass — every finding
+  fixed, zero waivers — is in `docs/security-findings.md`.
+- Note: retrieval runs Spring Boot 3.5.16 (minor bump from the Section 5
+  baseline of 3.4.x), taken to clear Tomcat/Netty/Jackson CVEs.
+
 ## Controls in place (M4) — graph layer
 
 - All Cypher is parameterized with explicit `tenant_id` parameters on both

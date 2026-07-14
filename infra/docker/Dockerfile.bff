@@ -10,6 +10,10 @@ RUN npm run build && npm prune --omit=dev
 FROM node:22-alpine
 ENV NODE_ENV=production
 WORKDIR /app
+# Remove the bundled npm CLI: the runtime runs `node dist/main.js` and never
+# invokes npm, so npm's own vendored transitive deps (picomatch, sigstore)
+# are unused attack surface carrying CVEs (M5 findings ledger).
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 USER node

@@ -6,10 +6,13 @@ COPY services/retrieval/src ./src
 RUN gradle --no-daemon bootJar
 
 FROM eclipse-temurin:21-jre
-# curl is used by the compose healthcheck
+# curl is used by the compose healthcheck. Also remove /usr/bin/pebble — a
+# Let's Encrypt ACME *test* server the base image ships that this service
+# never uses; it carried several Go-stdlib CVEs (M5 findings ledger).
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/* \
+    && rm -f /usr/bin/pebble \
     && useradd --system appuser
 WORKDIR /app
 COPY --from=build /build/build/libs/*.jar app.jar

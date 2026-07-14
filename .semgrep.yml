@@ -1,3 +1,32 @@
-# Custom Semgrep rules for Scriptorium.
-# The full SAST gate (community rulesets + CI wiring) lands in M5 (DESIGN.md Section 12).
-rules: []
+# Custom Semgrep rules for Scriptorium (DESIGN.md Section 12: "custom +
+# community rules"). CI also runs the community `p/default` ruleset; these
+# encode project-specific invariants the community rules don't cover.
+rules:
+  - id: scriptorium-no-string-built-cypher
+    languages: [python]
+    severity: ERROR
+    message: >
+      Build Cypher with parameters, never string interpolation. Tenant
+      isolation and injection safety depend on parameterized queries
+      (DESIGN.md Sections 8.5 and 12).
+    patterns:
+      - pattern-either:
+          - pattern: $TX.run(f"...")
+          - pattern: $TX.run("..." % ...)
+          - pattern: $TX.run("..." + ...)
+      - metavariable-regex:
+          metavariable: $TX
+          regex: (tx|session|conn|self\._.*)
+
+  - id: scriptorium-no-tenant-from-request-body
+    languages: [python]
+    severity: ERROR
+    message: >
+      Tenant scope must be derived server-side (from the JWT / injected
+      context), never read from the client request body (DESIGN.md
+      Section 11). If this is an internal service boundary, refactor to
+      accept the tenant as a validated path/parameter with a nosemgrep note.
+    patterns:
+      - pattern-either:
+          - pattern: request.get_json(...)["tenant_id"]
+          - pattern: request.json["tenant_id"]

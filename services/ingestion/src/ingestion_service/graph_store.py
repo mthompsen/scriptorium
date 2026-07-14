@@ -13,9 +13,15 @@ from ingestion_service.extraction import Relation
 
 
 def entity_id(tenant_id: str, name: str, entity_type: str) -> str:
-    """Deterministic tenant-scoped identity: same (name, type) merges."""
+    """Deterministic tenant-scoped identity: same (name, type) merges.
+
+    This is a content-address for graph node identity, not a security hash;
+    SHA-256 (truncated) is used over SHA-1 to avoid the deprecated primitive.
+    Only ingestion computes ids; retrieval reads them, so a hash change just
+    re-keys entities on the next ingest.
+    """
     raw = f"{tenant_id}|{name.lower()}|{entity_type}"
-    return hashlib.sha1(raw.encode()).hexdigest()[:12]
+    return hashlib.sha256(raw.encode()).hexdigest()[:12]
 
 
 class Neo4jGraphStore:
