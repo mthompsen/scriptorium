@@ -13,8 +13,13 @@ test.describe('login → upload → cited answer', () => {
   test('uploads a document and receives a cited, grounded answer', async ({ page }) => {
     await login(page);
 
-    // Upload a small handbook with an unmistakable grounded fact.
+    // Upload a small handbook with an unmistakable grounded fact. There is no
+    // delete endpoint, so re-uploading the same filename each run would
+    // accumulate duplicate rows and make the row locator ambiguous; a unique
+    // name per run keeps the locator precise by construction.
     await page.goto('/library');
+    const docName = `e2e-field-manual-${Date.now()}`;
+    const docRow = new RegExp(docName);
     const content = [
       '# E2E Field Manual',
       '',
@@ -24,19 +29,17 @@ test.describe('login → upload → cited answer', () => {
       '137 euros per week, paid monthly in arrears.',
     ].join('\n');
     await page.getByLabel('Document file').setInputFiles({
-      name: 'e2e-field-manual.md',
+      name: `${docName}.md`,
       mimeType: 'text/markdown',
       buffer: Buffer.from(content),
     });
     await page.getByRole('button', { name: 'Upload' }).click();
-    const row = page.getByRole('row', { name: /e2e-field-manual/ });
-    await expect(row).toBeVisible();
+    await expect(page.getByRole('row', { name: docRow })).toBeVisible();
 
     // Ingestion pipeline: wait for the status badge to reach "indexed".
     await expect(async () => {
       await page.reload();
-      await expect(page.getByRole('row', { name: /e2e-field-manual/ }).first())
-        .toContainText('indexed');
+      await expect(page.getByRole('row', { name: docRow })).toContainText('indexed');
     }).toPass({ timeout: 300_000, intervals: [5_000] });
 
     // Ask about the fact; the agent must answer with it and cite a source.
