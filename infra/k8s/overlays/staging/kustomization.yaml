@@ -24,13 +24,13 @@ replicas:
   name: retrieval
 
 images:
-- name: ghcr.io/mthompsen/scriptorium-agent
+- name: ghcr.io/mthompsen/scriptorium/agent
   newTag: ee1f8c45d7d997045acfae3fcc02a1ce41cfd908
-- name: ghcr.io/mthompsen/scriptorium-bff
+- name: ghcr.io/mthompsen/scriptorium/bff
   newTag: ee1f8c45d7d997045acfae3fcc02a1ce41cfd908
-- name: ghcr.io/mthompsen/scriptorium-frontend
+- name: ghcr.io/mthompsen/scriptorium/frontend
   newTag: ee1f8c45d7d997045acfae3fcc02a1ce41cfd908
-- name: ghcr.io/mthompsen/scriptorium-ingestion
+- name: ghcr.io/mthompsen/scriptorium/ingestion
   newTag: ee1f8c45d7d997045acfae3fcc02a1ce41cfd908
-- name: ghcr.io/mthompsen/scriptorium-retrieval
+- name: ghcr.io/mthompsen/scriptorium/retrieval
   newTag: ee1f8c45d7d997045acfae3fcc02a1ce41cfd908

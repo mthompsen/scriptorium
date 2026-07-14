@@ -16,7 +16,7 @@ spec:
         seccompProfile: { type: RuntimeDefault }
       containers:
         - name: agent
-          image: ghcr.io/mthompsen/scriptorium-agent:latest
+          image: ghcr.io/mthompsen/scriptorium/agent:latest
           ports: [{ containerPort: 8002 }]
           envFrom:
             - configMapRef: { name: scriptorium-config }

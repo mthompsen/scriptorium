@@ -17,7 +17,7 @@ spec:
         seccompProfile: { type: RuntimeDefault }
       containers:
         - name: retrieval
-          image: ghcr.io/mthompsen/scriptorium-retrieval:latest
+          image: ghcr.io/mthompsen/scriptorium/retrieval:latest
           ports: [{ containerPort: 8080 }]
           envFrom:
             - configMapRef: { name: scriptorium-config }

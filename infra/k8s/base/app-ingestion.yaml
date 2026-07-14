@@ -16,7 +16,7 @@ spec:
         seccompProfile: { type: RuntimeDefault }
       containers:
         - name: ingestion
-          image: ghcr.io/mthompsen/scriptorium-ingestion:latest
+          image: ghcr.io/mthompsen/scriptorium/ingestion:latest
           ports: [{ containerPort: 8001 }]
           envFrom:
             - configMapRef: { name: scriptorium-config }

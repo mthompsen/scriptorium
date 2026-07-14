@@ -16,7 +16,7 @@ spec:
         seccompProfile: { type: RuntimeDefault }
       containers:
         - name: frontend
-          image: ghcr.io/mthompsen/scriptorium-frontend:latest
+          image: ghcr.io/mthompsen/scriptorium/frontend:latest
           ports: [{ containerPort: 3000 }]
           readinessProbe:
             httpGet: { path: /api/health, port: 3000 }

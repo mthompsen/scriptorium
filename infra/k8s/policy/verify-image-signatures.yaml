@@ -21,7 +21,7 @@ spec:
               namespaces: [scriptorium-staging, scriptorium-prod]
       verifyImages:
         - imageReferences:
-            - "ghcr.io/mthompsen/scriptorium-*"
+            - "ghcr.io/mthompsen/scriptorium/*"
           attestors:
             - entries:
                 - keyless:

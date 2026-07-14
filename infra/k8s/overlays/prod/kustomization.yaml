@@ -27,8 +27,8 @@ replicas:
   - { name: ingestion, count: 2 }
 
 images:
-  - { name: ghcr.io/mthompsen/scriptorium-bff, newTag: prod }
-  - { name: ghcr.io/mthompsen/scriptorium-frontend, newTag: prod }
-  - { name: ghcr.io/mthompsen/scriptorium-ingestion, newTag: prod }
-  - { name: ghcr.io/mthompsen/scriptorium-agent, newTag: prod }
-  - { name: ghcr.io/mthompsen/scriptorium-retrieval, newTag: prod }
+  - { name: ghcr.io/mthompsen/scriptorium/bff, newTag: prod }
+  - { name: ghcr.io/mthompsen/scriptorium/frontend, newTag: prod }
+  - { name: ghcr.io/mthompsen/scriptorium/ingestion, newTag: prod }
+  - { name: ghcr.io/mthompsen/scriptorium/agent, newTag: prod }
+  - { name: ghcr.io/mthompsen/scriptorium/retrieval, newTag: prod }

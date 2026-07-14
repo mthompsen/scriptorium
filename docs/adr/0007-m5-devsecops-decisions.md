@@ -16,7 +16,7 @@ thresholds, or blanket ignores.
 ## Decision
 
 1. **Registry and signing:** images push to GHCR (`ghcr.io/mthompsen/
-   scriptorium-*`) on `main`, signed with **cosign keyless** (GitHub OIDC
+   scriptorium/*`) on `main`, signed with **cosign keyless** (GitHub OIDC
    `id-token`). Keyless avoids key custody entirely; the tradeoff is that
    signature metadata (image digest, workflow identity) lands in the public
    Rekor transparency log, which is acceptable for this project.

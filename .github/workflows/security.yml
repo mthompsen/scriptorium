@@ -100,7 +100,7 @@ jobs:
           - { service: agent, dockerfile: infra/docker/Dockerfile.agent }
           - { service: retrieval, dockerfile: infra/docker/Dockerfile.retrieval }
     env:
-      IMAGE: ghcr.io/${{ github.repository_owner }}/scriptorium-${{ matrix.service }}
+      IMAGE: ghcr.io/${{ github.repository_owner }}/scriptorium/${{ matrix.service }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
@@ -167,7 +167,7 @@ jobs:
           cd infra/k8s/overlays/staging
           for svc in bff frontend ingestion agent retrieval; do
             kustomize edit set image \
-              "ghcr.io/${{ github.repository_owner }}/scriptorium-$svc:${{ github.sha }}"
+              "ghcr.io/${{ github.repository_owner }}/scriptorium/$svc:${{ github.sha }}"
           done
       - name: commit the bump
         run: |
