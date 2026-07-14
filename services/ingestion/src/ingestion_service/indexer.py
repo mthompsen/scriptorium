@@ -1,6 +1,7 @@
 """OpenSearch adapter: one index per tenant (Section 8.4, ADR-0004)."""
 
 import json
+import time
 
 import requests
 
@@ -46,14 +47,24 @@ class OpenSearchIndex:
         response.raise_for_status()
 
     def delete_document(self, tenant_id: str, document_id: str) -> None:
-        """Idempotent re-ingest: drop any chunks from a previous version."""
-        response = requests.post(
-            f"{self._base_url}/{self.index_name(tenant_id)}/_delete_by_query",
-            json={"query": {"term": {"document_id": document_id}}},
-            timeout=self._timeout_s,
-        )
-        if response.status_code != 404:  # missing index is fine on first ingest
-            response.raise_for_status()
+        """Idempotent re-ingest: drop any chunks from a previous version.
+
+        Retries transient 5xx: concurrent ingests against a freshly created
+        index can hit it while shards are still initializing (503).
+        """
+        for attempt in range(4):
+            response = requests.post(
+                f"{self._base_url}/{self.index_name(tenant_id)}/_delete_by_query",
+                json={"query": {"term": {"document_id": document_id}}},
+                timeout=self._timeout_s,
+            )
+            if response.status_code == 404:  # missing index is fine on first ingest
+                return
+            if response.status_code < 500:
+                response.raise_for_status()
+                return
+            time.sleep(1.5 * (attempt + 1))
+        response.raise_for_status()
 
     def bulk_index(
         self,
