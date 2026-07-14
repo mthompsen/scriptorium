@@ -94,11 +94,51 @@ Waived with inline justification (not gamed):
 | CKV2_AWS_59 / CKV_AWS_318 | Dedicated OpenSearch master nodes ~triple cost; non-prod scale. |
 | CKV_AWS_18 / CKV2_AWS_61 / CKV2_AWS_62 (log bucket) | It IS the access-log target; self-logging would recurse. |
 
+## SAST — CodeQL (M7, first run after going public)
+
+CodeQL was authored in M5 but gated to public repos (GitHub Advanced
+Security is free only on public repos; ADR-0007). The repository went public
+on 2026-07-14 and CodeQL ran for the first time on commit `b2ed079`, all
+three legs succeeding with `build-mode: none` (buildless extraction) —
+java-kotlin 76 rules, javascript-typescript 87, python 43. Unlike the other
+scanners, **CodeQL reports to GitHub code scanning and does not gate the
+pipeline.** Triage of its alerts:
+
+| # | Alert | Severity | Location | Status |
+|---|---|---|---|---|
+| 2 | `java/spring-disabled-csrf-protection` | error | `services/retrieval/.../legacyadmin/LegacyAdminSecurityConfig.java:45` | **Dismissed — false positive** |
+| 1 | `js/xss-through-exception` | warning | `services/bff/src/chat/chat.controller.ts:67` | **Fixed** |
+
+- **#2 CSRF (dismissed, false positive).** The `csrf.disable()` is on the
+  internal service-to-service chain (`@Order(2)`): `permitAll()`, no cookies,
+  no sessions. CSRF requires ambient browser authority (a cookie/session the
+  browser attaches automatically); an unauthenticated, credential-less
+  endpoint has none, and an attacker gains nothing a direct request wouldn't.
+  The human-facing console chain (`@Order(1)`, HTTP Basic, GET-only) leaves
+  CSRF enabled. Dismissed in code scanning with this reasoning (ADR-0009).
+  Revisit if the internal API ever gains authentication.
+- **#1 XSS through exception (fixed).** `chat.controller.ts` wrote a caught
+  exception's `.message` into an SSE `error` event. The XSS *classification*
+  is a CodeQL modeling limitation — it treats `res.write` as an HTML sink,
+  whereas the actual response is `Content-Type: text/event-stream` (not
+  `text/html`), the payload is JSON-encoded (`JSON.stringify({ message })`),
+  and the route is a POST; the browser's stream reader receives it as data,
+  not markup. But the underlying pattern was a genuine
+  **information-disclosure** risk: the `catch` was unbounded, so beyond our
+  own server-authored `HttpException` messages it would also surface library
+  internals — e.g. a V8 `JSON.parse` `SyntaxError` whose `.message` embeds a
+  snippet of a malformed SSE frame, and those frames carry LLM-generated,
+  user-influenced output. **Fixed** rather than dismissed: the catch now
+  surfaces `.message` only for our own `instanceof HttpException` (safe
+  constants) and falls back to the generic `'stream failed'` for everything
+  else, with the original error logged server-side so debuggability is kept.
+
 ## Gate configuration
 
 - Trivy: HIGH,CRITICAL, `--ignore-unfixed`, `--exit-code 1`.
 - Semgrep: ERROR severity (`p/default` + custom), `--error`.
 - gitleaks: any finding fails.
+- CodeQL: reports to GitHub code scanning; does not gate CI.
 
 No thresholds were lowered and no scans disabled to reach a green gate. The
 `.gitleaks.toml` allowlist (dev-only `.env.example`) is the only suppression,

@@ -32,6 +32,12 @@ thresholds, or blanket ignores.
    the repo goes public instead of failing red or being silently omitted.
    Semgrep carries SAST until then. This is a documented limitation, not a
    waiver of SAST.
+
+   > **Update (2026-07-14, repo made public):** the gate opened. CodeQL now
+   > runs on `main` for all three languages using `build-mode: none`
+   > (buildless extraction — java-kotlin cannot autobuild the nested Gradle
+   > project). It reports to GitHub code scanning and does not gate CI.
+   > Semgrep is no longer the sole SAST. See `docs/security-findings.md`.
 4. **Azure DevOps mirror:** `azure-pipelines.yml` is authored to mirror the
    GitHub Actions stages, but there is no ADO organization to execute it.
    "Green" for the mirror therefore means authored and schema-valid;
