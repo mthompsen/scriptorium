@@ -1,5 +1,5 @@
 # Build context: repo root
-FROM gradle:8.14-jdk21 AS build
+FROM gradle:9.6-jdk21 AS build
 WORKDIR /build
 COPY services/retrieval/build.gradle services/retrieval/settings.gradle ./
 COPY services/retrieval/src ./src
