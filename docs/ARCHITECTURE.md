@@ -12,11 +12,11 @@
 
 ## 0. How to read this document
 
-This is both the system's design document and its delivery plan. Sections 1–14 describe *what to build and why*. Section 15 is the phased roadmap with per-milestone acceptance criteria, executed strictly one milestone at a time.
+This is both the system's design document and its delivery plan. Sections 1–14 describe what the system is and why it is built this way. Section 15 is the phased roadmap: each milestone is a shippable increment with its own acceptance criteria, built strictly one milestone at a time.
 
-When a downstream decision is not specified here, prefer the choice most consistent with the stated design goals (Section 3) and record the decision as an ADR (Section 17). Do not silently invent scope. Do not skip the test and security gates defined in Sections 13 and 16.
+Where this document left a downstream decision unspecified, the choice most consistent with the stated design goals (Section 3) was taken and recorded as an ADR (Section 17) rather than scope being invented silently. The test and security gates in Sections 13 and 16 are treated as binding.
 
-A candid framing note is in Section 18. Read it. Some of this system's breadth is deliberate resume signal rather than what a lean production system would choose, and being able to say so out loud is part of the point.
+Section 18 is a candid framing note worth reading: some of this system's breadth is deliberate resume signal rather than what a lean production system would choose, and being able to say so is part of the point.
 
 ---
 
@@ -626,9 +626,9 @@ Argo CD `Application` manifests in `infra/gitops/`. Merges to main update image 
 
 ---
 
-## 15. Delivery plan (the work order)
+## 15. Delivery plan
 
-This is the Agile artifact (R5) and the execution plan. Each milestone is a shippable increment with its own demo and acceptance criteria. **Execute one milestone at a time.** Do not start a milestone until the previous one's acceptance criteria pass. Mirror this as epics and stories in `docs/backlog.md` with a board (GitHub Projects or Azure Boards).
+This is the Agile artifact (R5) and the execution plan. Each milestone is a shippable increment with its own demo and acceptance criteria, delivered one at a time — no milestone was started until the previous one's acceptance criteria passed. The same breakdown is mirrored as epics and stories in `docs/backlog.md` with a board (GitHub Projects or Azure Boards).
 
 **M0 — Scaffolding.** Monorepo, all directories, Makefile, docker-compose skeleton, empty services that boot with `/health`, this document committed as `docs/ARCHITECTURE.md`, ADR-0001, CI running lint + a trivial test.
 *Done when:* `make up` starts every container and all `/health` endpoints return 200; CI is green. *Unlocks:* R5 (Docker, Git, CI foundation).
@@ -664,16 +664,16 @@ A unit of work is done only when: it has meaningful automated tests that pass; c
 
 ## 17. Appendix A — ADR process
 
-Use `docs/adr/0000-template.md` (title, status, context, decision, consequences). Number sequentially. ADR-0001 records the decision to use ADRs. Write an ADR whenever choosing between real alternatives (which migration tool owns the schema, per-tenant vs shared OpenSearch index, whether to add a reranker, any major version deviation from Section 5).
+ADRs follow `docs/adr/0000-template.md` (title, status, context, decision, consequences) and are numbered sequentially; ADR-0001 records the decision to use ADRs. An ADR is written whenever a choice is made between real alternatives (which migration tool owns the schema, per-tenant vs shared OpenSearch index, whether to add a reranker, any major-version deviation from Section 5).
 
 ---
 
 ## 18. Appendix B — Scope and honesty note
 
-Read this and be ready to say it out loud in an interview, because saying it is a strength.
+This is worth being able to say out loud in an interview, because saying it is a strength.
 
 This system is deliberately broad. A lean greenfield product that needed exactly this domain would not reach for Node and Python and Java, plus Postgres and Mongo and Redis, plus OpenSearch and Neo4j, all at once. That polyglot, poly-store breadth exists here to map onto a specific job description and to demonstrate range. In production you would consolidate: likely one or two languages, drop a redundant datastore, and justify every remaining piece by load rather than by resume coverage.
 
 The value is in being able to articulate that tradeoff. When a reviewer asks why there are three backend languages, the strong answer is not a defense of the choice as optimal; it is "this was a portfolio piece built to demonstrate breadth against a target role, and here is precisely what I would cut in production and why." That answer signals the judgment the job is actually testing for. The legacy JSP console is labeled as legacy for the same reason: it is an honest demonstration of mixed-technology integration, not a claim that server-rendered JSP is the right default in 2026.
 
-Everything else in this document is meant seriously. The architecture is coherent, the write/read/reason split is real, the security and evaluation stories are genuine engineering rather than decoration, and each datastore does hold data suited to its model. Build it to the Definition of Done, keep it runnable, and let the traceability table in Section 2 do the talking.
+Everything else in this document is meant seriously. The architecture is coherent, the write/read/reason split is real, the security and evaluation stories are genuine engineering rather than decoration, and each datastore holds data suited to its model. It is built to the Definition of Done, stays runnable, and the traceability table in Section 2 is left to do the talking.
