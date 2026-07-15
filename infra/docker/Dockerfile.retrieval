@@ -7,7 +7,7 @@ COPY services/retrieval/src ./src
 # The boot war is still directly runnable with java -jar.
 RUN gradle --no-daemon bootWar
 
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:25-jre
 # curl is used by the compose healthcheck. Also remove /usr/bin/pebble — a
 # Let's Encrypt ACME *test* server the base image ships that this service
 # never uses; it carried several Go-stdlib CVEs (M5 findings ledger).
