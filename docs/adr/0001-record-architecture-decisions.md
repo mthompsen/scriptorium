@@ -26,8 +26,8 @@ under the Section 3 design goals.
 
 ## Consequences
 
-The decision log lives in the repository and travels with every clone; review
-and interviews can trace rationale directly. Writing ADRs adds a small,
+The decision log lives in the repository and travels with every clone; anyone
+reviewing the code can trace rationale directly. Writing ADRs adds a small,
 constant documentation cost per decision, which we accept. Superseded
 decisions are never deleted — their status is updated to point at the ADR
 that replaces them, preserving history.

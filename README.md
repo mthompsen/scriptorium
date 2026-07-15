@@ -7,11 +7,10 @@ answers. Multi-tenant and role-based, with server-side tenant isolation and
 full tracing of every AI interaction, guardrails on the agent, and an
 evaluation harness for retrieval and generation quality.
 
-This is a portfolio project built against a specific full-stack + GenAI role;
-the [requirements traceability](#requirements-traceability) tables below map
-every line of that role's requirements to a concrete part of the system. The
-polyglot breadth (three backend stacks, five datastores) is deliberate
-resume-coverage and is discussed honestly in
+The [capabilities](#capabilities) table below maps each part of the system to
+where it lives in the codebase. The polyglot breadth (three backend stacks,
+five datastores) is a deliberate demonstration of range rather than what a
+lean production system would choose; that tradeoff is discussed honestly in
 [ARCHITECTURE.md Appendix B](docs/ARCHITECTURE.md#18-appendix-b--scope-and-honesty-note).
 
 **Authoritative spec:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
@@ -151,38 +150,25 @@ Also in [docs/screenshots/](docs/screenshots/): the
 [library](docs/screenshots/library.png) with ingestion statuses and the
 [modern admin page](docs/screenshots/admin.png) that links the console.
 
-## Requirements traceability
+## Capabilities
 
-The spine of the project (ARCHITECTURE.md Section 2): every required and preferred
-qualification of the target role, mapped to where the codebase demonstrates
-it. Rows marked *candidate attribute* are credentials no program can
-demonstrate; they are listed for completeness.
+What the system demonstrates, mapped to where it lives in the codebase
+(ARCHITECTURE.md Section 2).
 
-### Required qualifications
+| Capability | Where | How |
+|---|---|---|
+| Full-stack frontend (React / Next.js / TypeScript) | `frontend/` | Next.js + React + TypeScript app: streaming chat, document library, knowledge-graph explorer, admin. HTML5 semantics + CSS3 via Tailwind, plus a Bootstrap-based legacy console. |
+| Polyglot backends (Node, Python/Flask, Java/Spring Boot) | `services/bff` (Node), `services/ingestion` + `services/agent` (Python/Flask), `services/retrieval` (Java/Spring Boot) | All three stacks used deliberately, each with a distinct responsibility (ARCHITECTURE.md Section 7). |
+| REST APIs, microservices, serverless | All `services/*`; `infra/terraform` | REST across every service with contract tests (Pact) between BFF and retrieval. Four-service microservice topology. Serverless ingestion trigger: S3 → Lambda → SQS — proven end to end on LocalStack (see status table). |
+| Relational + NoSQL data, Git, CI/CD, Docker, testing | Data layer + `infra/` + `.github/` + `azure-pipelines.yml` | Postgres (relational); MongoDB (NoSQL). Git with Conventional Commits. CI/CD in GitHub Actions (executed) and an Azure DevOps mirror (authored — see status table). Docker for every service. Test pyramid: unit, integration, contract, e2e, AI eval (Section 13). |
+| AI / GenAI / agentic on cloud | `services/agent`, `services/ingestion`, `packages/llm`, `infra/terraform` | RAG pipeline + bounded agentic tool-use loop with guardrails, tracing, and an eval harness. Provider-agnostic LLM layer (Ollama local, Bedrock, Anthropic API). AWS target authored in Terraform with Bedrock IAM — validated, not applied (see status table). |
+| OOP + design patterns | Throughout + `docs/adr/` | NestJS and Spring Boot are OOP + DI heavy. Patterns applied intentionally and named in code/ADRs: Adapter/Strategy (LLM providers), Repository, ports-and-adapters, CQRS-lite (write/read split), circuit-breaker-style degradation (graph fallback). Lint/format gates and the ADRs in `docs/adr/` enforce the discipline. |
+| Secure, reusable, responsive, maintainable | Cross-cutting; `packages/` | Controls per `docs/security.md`; shared `packages/llm` and contracts; responsive + accessible UI (axe-core gate in e2e); tests, typed contracts, ADRs. |
+| DevSecOps, GitOps, Kubernetes | `.github/`, `infra/k8s`, `infra/gitops` | DevSecOps pipeline: Semgrep, gitleaks, Trivy (fs + images), SBOM (Syft), cosign keyless signing, findings gate; CodeQL SAST live in CI (see status table). Kustomize base + dev/staging/prod overlays; Argo CD manifests + staging tag-bump automation; Kyverno signed-image admission policy. |
+| OpenSearch, Neo4j, Gradle | `services/retrieval`, data layer | OpenSearch hybrid (lexical + vector) retrieval; Neo4j knowledge graph with parameterized Cypher; Spring Boot service built with Gradle. |
+| Legacy / mixed-technology integration (JSP, jQuery, Bootstrap) | `services/retrieval/src/main/webapp/` | Server-rendered JSP console (jQuery AJAX + Bootstrap via WebJars) served by the Spring Boot service, linked from the modern admin page and labeled as a legacy tool integrated deliberately (ADR-0009). |
 
-| # | Requirement | Where demonstrated | How |
-|---|---|---|---|
-| R1 | Bachelor's in CS or similar technical field | *Candidate attribute.* Whole system demonstrates applied CS: distributed systems, retrieval algorithms, graph modeling, ranking. | Pairs with the candidate's CS degree track. |
-| R2 | Full stack, frontend + backend, incl. Angular/React/Next.js and JS/TS/HTML5/CSS3 | `frontend/` | Next.js + React + TypeScript app: streaming chat, document library, knowledge-graph explorer, admin. HTML5 semantics + CSS3 via Tailwind, plus a Bootstrap-based legacy console (see RP5). |
-| R3 | Backend in Node.js, Python (Django/Flask), or Java (Spring Boot) | `services/bff` (Node), `services/ingestion` + `services/agent` (Python/Flask), `services/retrieval` (Java/Spring Boot) | All three stacks used deliberately, each with a distinct responsibility (ARCHITECTURE.md Section 7). |
-| R4 | Build and consume REST APIs; microservices or serverless in production | All `services/*`; `infra/terraform` | REST across every service with contract tests (Pact) between BFF and retrieval. Four-service microservice topology. Serverless ingestion trigger: S3 upload → Lambda → SQS — **proven end to end on LocalStack** (see status table). |
-| R5 | Relational DB + at least 1 NoSQL; Git; Azure DevOps or similar; Docker; Agile/Scrum; automated testing; CI/CD | Data layer + `infra/` + `.github/` + `azure-pipelines.yml` + `docs/backlog.md` | Postgres (relational); MongoDB (NoSQL). Git with Conventional Commits. CI/CD in GitHub Actions (executed) and an Azure DevOps mirror (authored — see status table). Docker for every service. Agile backlog per milestone. Test pyramid: unit, integration, contract, e2e, AI eval (ARCHITECTURE.md Section 13). |
-| R6 | Develop/integrate/deploy AI, GenAI, or agentic AI in enterprise apps on AWS/Azure/GCP | `services/agent`, `services/ingestion`, `packages/llm`, `infra/terraform` | RAG pipeline + bounded agentic tool-use loop with guardrails, tracing, and an eval harness. Provider-agnostic LLM layer (Ollama local, Bedrock, Anthropic API). AWS target authored in Terraform with Bedrock IAM — validated, not applied (see status table). |
-| R7 | Ability to travel ~20% | *Candidate attribute.* | — |
-| R8 | Limited immigration sponsorship may be available | *Employer term.* | — |
-
-### Preferred qualifications
-
-| # | Requirement | Where demonstrated | How |
-|---|---|---|---|
-| RP1 | OOP, design patterns, clean coding | Throughout + `docs/adr/` | NestJS and Spring Boot are OOP + DI heavy. Patterns applied intentionally and named in code/ADRs: Adapter/Strategy (LLM providers), Repository, ports-and-adapters (service internals), CQRS-lite (write/read split), Circuit-breaker-style degradation (graph fallback). Lint/format gates and the ADRs in `docs/adr/` enforce the discipline. |
-| RP2 | Secure, reusable, responsive, maintainable apps | Cross-cutting; `packages/` | Controls per `docs/security.md`; shared `packages/llm` and contracts; responsive + accessible UI (axe-core gate in e2e); tests, typed contracts, ADRs. |
-| RP3 | Secure dev, DevOps, DevSecOps, web security, GitOps, Kubernetes customization | `.github/`, `infra/k8s`, `infra/gitops` | DevSecOps pipeline: Semgrep (+custom rules), gitleaks, Trivy (fs + images), SBOM (Syft), cosign keyless signing, findings gate; CodeQL SAST live in CI (see status table). Kustomize base + dev/staging/prod overlays; Argo CD manifests + staging tag-bump automation; Kyverno signed-image admission policy. |
-| RP4 | OpenSearch, Elasticsearch, Neo4j, Memgraph, Maven, or Gradle | `services/retrieval`, data layer | OpenSearch hybrid (lexical + vector) retrieval; Neo4j knowledge graph with parameterized Cypher; Spring Boot service built with Gradle. |
-| RP5 | Bootstrap, jQuery, or JSP in legacy or mixed-technology environments | `services/retrieval/src/main/webapp/` | Server-rendered JSP console (jQuery AJAX + Bootstrap via WebJars) served by the Spring Boot service, linked from the modern admin page and labeled as a legacy tool integrated deliberately (ADR-0009). |
-| RP6 | Cloud certification in AWS/Azure/GCP | *Candidate attribute.* | Cloud-native IaC in `infra/terraform` demonstrates the underlying competency. |
-
-If you're asking "show me where you did X," these tables are the answer.
+If you're asking "show me where you did X," this table is the answer.
 
 ## What runs live vs. what is authored + validated
 

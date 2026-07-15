@@ -6,7 +6,7 @@
 ## Context
 
 M7 (ARCHITECTURE.md Section 15) adds the JSP + jQuery + Bootstrap legacy admin
-console to the Spring Boot retrieval service (RP5), an accessibility and
+console to the Spring Boot retrieval service, an accessibility and
 responsive pass, Playwright end-to-end journeys, and the reviewer-facing
 README. The spec fixes the console's location (`src/main/webapp/`, Section 6)
 and its intent (honest mixed-technology integration, Section 10) but leaves
@@ -33,7 +33,7 @@ packaging, authentication, scope, and where e2e executes unspecified.
    counts (Neo4j), and a per-document drill-down — real administration
    visibility without inventing a second write path. New read-only ports
    (`CorpusAdminPort`, `GraphAdminPort`) keep the retrieval-path interfaces
-   segregated (RP1).
+   segregated.
 
 3. **Security split (Section 12).** The console is human-facing, so
    `/legacy/admin/**` requires HTTP Basic (credentials via
@@ -51,7 +51,7 @@ packaging, authentication, scope, and where e2e executes unspecified.
    pair: 3.x/4.x would be more period-accurate but carry open XSS CVEs
    (e.g. CVE-2024-6531) that would trip the Trivy gate; jQuery remains
    genuinely load-bearing (AJAX refresh against the console's JSON API,
-   client-side table filter), so RP5 is satisfied without shipping known-bad
+   client-side table filter), so the legacy-integration capability is genuine without shipping known-bad
    dependencies.
 
 5. **E2e lives in `/e2e` and runs against the compose stack, not in CI.**

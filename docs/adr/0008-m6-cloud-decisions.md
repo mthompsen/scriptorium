@@ -7,7 +7,7 @@
 
 M6 (ARCHITECTURE.md Sections 14.5, 15) provisions the AWS target — VPC, EKS, RDS
 Postgres, OpenSearch, S3, SQS, Lambda, IAM, Bedrock access — with the
-serverless ingestion path (S3 → Lambda → SQS → ingestion worker) as the R4
+serverless ingestion path (S3 → Lambda → SQS → ingestion worker) as the primary
 deliverable. The standing constraint for this milestone: author and validate
 the infrastructure, but **do not run `terraform apply` against real AWS or
 provision billable resources** without explicit approval and a cost estimate.
@@ -50,7 +50,7 @@ The spec itself anticipates this — "or LocalStack for a costless proof."
 
 ## Consequences
 
-The serverless requirement (R4) is demonstrated end to end at zero cost.
+The serverless path is demonstrated end to end at zero cost.
 The managed-infra HCL is real and reviewable but its live behavior is
 unproven until someone runs a cost-approved apply — called out wherever it
 matters. Community Terraform modules (VPC, EKS, RDS) keep the stack concise
