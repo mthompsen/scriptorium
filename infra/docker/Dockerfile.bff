@@ -1,5 +1,5 @@
 # Build context: repo root
-FROM node:22-alpine AS build
+FROM node:26-alpine AS build
 WORKDIR /app
 COPY services/bff/package.json services/bff/package-lock.json ./
 RUN npm ci
@@ -7,7 +7,7 @@ COPY services/bff/tsconfig.json services/bff/tsconfig.build.json ./
 COPY services/bff/src ./src
 RUN npm run build && npm prune --omit=dev
 
-FROM node:22-alpine
+FROM node:26-alpine
 ENV NODE_ENV=production
 WORKDIR /app
 # Remove the bundled npm CLI: the runtime runs `node dist/main.js` and never
