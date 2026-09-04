@@ -1,6 +1,6 @@
 """Scriptorium ingestion service — the write path (ARCHITECTURE.md Section 7.2).
 
-M2: /ingest stores raw bytes (ADR-0003), then a background worker runs the
+/ingest stores raw bytes (ADR-0003), then a background worker runs the
 RAG pipeline — parse, chunk, embed, index (Section 9.1, ADR-0004).
 """
 

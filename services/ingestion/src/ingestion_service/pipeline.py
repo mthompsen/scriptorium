@@ -41,7 +41,7 @@ class Pipeline:
         self._chunk_store = chunk_store
         self._index = index
         self._embedder = embedder
-        # Optional graph stage (M4, ADR-0006): both must be present to run.
+        # Optional graph stage (ADR-0006): both must be present to run.
         self._extractor = extractor
         self._graph = graph
 
@@ -113,7 +113,8 @@ class Pipeline:
 
 
 class PipelineRunner:
-    """In-process async execution (ADR-0004); the durable queue arrives with M6."""
+    """In-process async execution (ADR-0004); the durable queue arrives with the
+    event-driven ingestion path."""
 
     def __init__(self, pipeline: Pipeline, max_workers: int = 2) -> None:
         self._pipeline = pipeline

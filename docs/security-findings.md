@@ -1,9 +1,9 @@
-# M5 security findings ledger
+# Security findings ledger
 
-Every finding from the initial DevSecOps scan pass (2026-07-14), how it was
-triaged, and the outcome. The standing rule for M5: findings are fixed or
-explicitly waived with recorded reasoning — never suppressed to make the gate
-pass. **Outcome: every finding was a real fix. Zero waivers.**
+Every finding from the initial DevSecOps scan pass, how it was triaged, and
+the outcome. The rule: findings are fixed or explicitly waived with recorded
+reasoning — never suppressed to make the gate pass. **Outcome: every finding
+was a real fix. Zero waivers.**
 
 Scanners: Trivy (dependency + image, HIGH/CRITICAL, `--ignore-unfixed`),
 Semgrep (`p/default` community + custom `.semgrep.yml`), gitleaks (full
@@ -49,8 +49,7 @@ no-tenant-from-request-body. **0 findings** — the codebase already complies.
   plus tomcat/netty/jackson/spring HIGH). **Fixed** by bumping Spring Boot
   `3.4.5 → 3.5.16`; the Boot BOM pulled patched Tomcat, Netty, Jackson, and
   Spring versions. (Minor-version deviation from the Section 5 baseline of
-  Boot 3.4.x, taken for security per Section 5's allowance — noted here and
-  in `docs/security.md`.) All 14 retrieval tests, incl. Pact verification,
+  Boot 3.4.x, taken for security — noted here and in `docs/security.md`.) All 14 retrieval tests, incl. Pact verification,
   still pass.
 - **7 Go-stdlib findings in `/usr/bin/pebble`** — a Let's Encrypt ACME
   **test server** binary shipped in the `eclipse-temurin:21-jre` base image
@@ -68,9 +67,9 @@ no-tenant-from-request-body. **0 findings** — the codebase already complies.
   (`rm -rf /usr/local/lib/node_modules/npm …`): unused attack surface gone,
   same rationale as pebble.
 
-## IaC scan — Checkov (M6 Terraform)
+## IaC scan — Checkov (Terraform)
 
-Initial scan: **77 passed, 26 failed**. After honest triage: **140 passed,
+Initial scan: **77 passed, 26 failed**. After triage: **140 passed,
 0 failed, 19 skips — every skip carries an inline `#checkov:skip=…:reason`.**
 
 Fixed (real hardening): RDS IAM auth + Performance Insights (CMK) + CloudWatch
@@ -81,7 +80,7 @@ X-Ray tracing + reserved concurrency; S3 access-logging bucket + lifecycle +
 abort-incomplete-uploads on both buckets; security-group rule descriptions +
 scoped egress.
 
-Waived with inline justification (not gamed):
+Waived with inline justification:
 
 | Check(s) | Reason |
 |---|---|
@@ -94,11 +93,11 @@ Waived with inline justification (not gamed):
 | CKV2_AWS_59 / CKV_AWS_318 | Dedicated OpenSearch master nodes ~triple cost; non-prod scale. |
 | CKV_AWS_18 / CKV2_AWS_61 / CKV2_AWS_62 (log bucket) | It IS the access-log target; self-logging would recurse. |
 
-## SAST — CodeQL (M7, first run after going public)
+## SAST — CodeQL (first run after going public)
 
-CodeQL was authored in M5 but gated to public repos (GitHub Advanced
-Security is free only on public repos; ADR-0007). The repository went public
-on 2026-07-14 and CodeQL ran for the first time on commit `b2ed079`, all
+The CodeQL workflow was written early but gated to public repos (GitHub
+Advanced Security is free only on public repos; ADR-0007). The repository
+went public and CodeQL ran for the first time on commit `b2ed079`, all
 three legs succeeding with `build-mode: none` (buildless extraction) —
 java-kotlin 76 rules, javascript-typescript 87, python 43. Unlike the other
 scanners, **CodeQL reports to GitHub code scanning and does not gate the
@@ -149,4 +148,4 @@ pipeline.** Triage of its alerts:
 
 No thresholds were lowered and no scans disabled to reach a green gate. The
 `.gitleaks.toml` allowlist (dev-only `.env.example`) is the only suppression,
-and it predates M5 with its own justification.
+and it carries its own justification inline.

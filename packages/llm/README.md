@@ -5,8 +5,8 @@ protocol with Adapter/Strategy implementations for AWS Bedrock, Azure OpenAI,
 Google Vertex, and Ollama (local laptop mode). Consumed by the ingestion and
 agent services.
 
-**Status:** Ollama and Bedrock adapters implemented (M2). Azure OpenAI and
-Vertex adapters arrive with the cloud milestones.
+**Status:** Ollama and Bedrock adapters implemented. Azure OpenAI and Vertex
+adapters are not written yet.
 
 Selection is by environment (`LLM_PROVIDER=ollama|bedrock`; see
 `factory.py` for the model/env knobs). Bedrock needs the `[bedrock]` extra.

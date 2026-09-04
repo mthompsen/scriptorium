@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 import { login } from './helpers';
 
 /**
- * The critical journey (Section 15 M1–M3): sign in, upload a document, ask a
+ * The critical journey: sign in, upload a document, ask a
  * question, get a grounded answer streamed into the chat.
  */
 test.describe('login → upload → grounded answer', () => {

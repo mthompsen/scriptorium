@@ -1,17 +1,17 @@
-# ADR-0007: M5 DevSecOps — signing, registries, scanner gates, and honest limits
+# ADR-0007: DevSecOps — signing, registries, scanner gates, and environment limits
 
 - **Status:** Accepted
 - **Date:** 2026-07-14
 
 ## Context
 
-M5 (ARCHITECTURE.md Sections 12, 14, 15) adds the security pipeline with a
-findings gate, Kubernetes manifests, and GitOps. Several mechanics are
-unspecified, and two spec items collide with the realities of a private
-repository and a single-developer environment. The standing triage rule for
-this milestone: findings are fixed or explicitly waived with recorded
-reasoning — the gate is never made green by disabling scans, lowering
-thresholds, or blanket ignores.
+This adds the security pipeline with a findings gate, Kubernetes manifests,
+and GitOps (ARCHITECTURE.md Sections 12 and 14). Several mechanics were left
+open, and two of the planned items collide with the realities of a private
+repository and a single-developer environment. The triage rule throughout:
+findings are fixed or explicitly waived with recorded reasoning — the gate is
+never made green by disabling scans, lowering thresholds, or blanket
+ignores.
 
 ## Decision
 
@@ -33,7 +33,7 @@ thresholds, or blanket ignores.
    Semgrep carries SAST until then. This is a documented limitation, not a
    waiver of SAST.
 
-   > **Update (2026-07-14, repo made public):** the gate opened. CodeQL now
+   > **Update (repo made public):** the gate opened. CodeQL now
    > runs on `main` for all three languages using `build-mode: none`
    > (buildless extraction — java-kotlin cannot autobuild the nested Gradle
    > project). It reports to GitHub code scanning and does not gate CI.
@@ -42,7 +42,7 @@ thresholds, or blanket ignores.
    GitHub Actions stages, but there is no ADO organization to execute it.
    "Green" for the mirror therefore means authored and schema-valid;
    the executed pipeline of record is GitHub Actions. Recorded in the
-   backlog as an environment gap, not silently glossed.
+   backlog as an environment gap.
 5. **Signed-image admission:** a Kyverno `ClusterPolicy` in
    `infra/k8s/policy/` verifies cosign signatures for staging/prod
    namespaces. The dev overlay uses locally built images (no registry pull,

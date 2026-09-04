@@ -1,23 +1,23 @@
-# ADR-0009: M7 — legacy console packaging, console security, and the e2e gate
+# ADR-0009: Legacy console packaging, console security, and the e2e gate
 
 - **Status:** Accepted
 - **Date:** 2026-07-14
 
 ## Context
 
-M7 (ARCHITECTURE.md Section 15) adds the JSP + jQuery + Bootstrap legacy admin
-console to the Spring Boot retrieval service, an accessibility and
-responsive pass, Playwright end-to-end journeys, and the reviewer-facing
-README. The spec fixes the console's location (`src/main/webapp/`, Section 6)
-and its intent (honest mixed-technology integration, Section 10) but leaves
-packaging, authentication, scope, and where e2e executes unspecified.
+The final pass adds the JSP + jQuery + Bootstrap legacy admin console to the
+Spring Boot retrieval service, an accessibility and responsive pass,
+Playwright end-to-end journeys, and the README. The design document fixes the
+console's location (`src/main/webapp/`, Section 6) and its intent
+(mixed-technology integration, Section 10) but leaves packaging,
+authentication, scope, and where e2e executes open.
 
 ## Decision
 
 1. **War packaging (`bootWar`), not the executable-jar JSP workaround.**
    JSP does not work from an executable jar; the two options were the
    undocumented `META-INF/resources` trick or Spring Boot's documented
-   war path. War packaging follows the spec's `src/main/webapp/` layout and
+   war path. War packaging follows the `src/main/webapp/` layout and
    the supported route. Two non-obvious mechanics, recorded because they cost
    real debugging: the deployed artifact **must keep the `.war` extension**
    (Boot only exposes the archive's webapp content as the servlet document
@@ -39,7 +39,7 @@ packaging, authentication, scope, and where e2e executes unspecified.
    `/legacy/admin/**` requires HTTP Basic (credentials via
    `LEGACY_ADMIN_USER`/`LEGACY_ADMIN_PASSWORD`, BCrypt-encoded in memory)
    under a dedicated Spring Security filter chain. The internal REST API
-   keeps its pre-M7 posture — unauthenticated inside the cluster network,
+   keeps its existing posture — unauthenticated inside the cluster network,
    tenant scope enforced upstream by the BFF — via a second `permitAll`
    chain with CSRF disabled, which is correct for a cookie-less
    service-to-service API and keeps the BFF's `POST /retrieve` working.
@@ -51,8 +51,8 @@ packaging, authentication, scope, and where e2e executes unspecified.
    pair: 3.x/4.x would be more period-accurate but carry open XSS CVEs
    (e.g. CVE-2024-6531) that would trip the Trivy gate; jQuery remains
    genuinely load-bearing (AJAX refresh against the console's JSON API,
-   client-side table filter), so the legacy-integration capability is genuine without shipping known-bad
-   dependencies.
+   client-side table filter), so the integration is real without shipping
+   known-bad dependencies.
 
 5. **E2e lives in `/e2e` and runs against the compose stack, not in CI.**
    Playwright journeys (login → upload → cited chat answer; graph explorer;
@@ -60,8 +60,8 @@ packaging, authentication, scope, and where e2e executes unspecified.
    violations) execute on a workstation against `make up`, like the eval.
    CI does not run them: the full stack needs a ~2.3 GB model pull and
    CPU LLM inference that a hosted runner cannot complete inside sane
-   timeouts. This is the same honesty rule as ADR-0007/0008 — the suite is
-   real and executed locally; where it runs is documented, not glossed.
+   timeouts. Same rule as ADR-0007/0008 — the suite is real and executed
+   locally, and where it runs is documented rather than left ambiguous.
 
 ## Consequences
 

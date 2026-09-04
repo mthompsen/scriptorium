@@ -38,7 +38,7 @@ class DocumentRegistry:
 
 
 class RawDocumentStore:
-    """MongoDB adapter for raw uploaded bytes (Section 8.2; M1 scope per ADR-0003)."""
+    """MongoDB adapter for raw uploaded bytes (Section 8.2; ADR-0003)."""
 
     def __init__(self, mongo_url: str, database: str = "scriptorium") -> None:
         self._collection = MongoClient(mongo_url)[database]["raw_documents"]

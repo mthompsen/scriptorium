@@ -7,23 +7,21 @@ answers. Multi-tenant and role-based, with server-side tenant isolation and
 full tracing of every AI interaction, guardrails on the agent, and an
 evaluation harness for retrieval and generation quality.
 
-The [capabilities](#capabilities) table below maps each part of the system to
-where it lives in the codebase. The polyglot breadth (three backend stacks,
-five datastores) is a deliberate demonstration of range rather than what a
-lean production system would choose; that tradeoff is discussed honestly in
-[ARCHITECTURE.md Appendix B](docs/ARCHITECTURE.md#18-appendix-b--scope-and-honesty-note).
+It runs end to end on a laptop under `docker compose`, including the model.
+The stack is wider than a lean production system would pick — three backend
+languages and five datastores — and [ARCHITECTURE.md](docs/ARCHITECTURE.md)
+covers why, and what I would consolidate first.
 
-**Authoritative spec:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
-**Milestone status: M0–M7 complete** (Section 15 delivery plan) — with the
-environment-bound limitations listed in
-[What runs live vs. what is authored](#what-runs-live-vs-what-is-authored--validated),
-which is worth reading before you assume anything runs somewhere.
+Design notes and the full component reference live in
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Before assuming any particular
+piece is running somewhere, read
+[What runs live vs. what is authored](#what-runs-live-vs-what-is-authored--validated).
 
 ## Architecture
 
 The write path (documents → indexed, graph-linked knowledge) is separated
 from the read/reason path (questions → grounded answers): a real
-command/query split (ARCHITECTURE.md Section 4).
+command/query split.
 
 ```mermaid
 flowchart TB
@@ -115,7 +113,7 @@ fast. When all containers are healthy:
 
 All credentials are dev-only compose defaults; see
 `infra/docker/.env.example`. Auth is email/password JWT for the demo — a
-production deployment would federate SSO (ARCHITECTURE.md Section 11).
+production deployment would federate SSO.
 
 **The ten-minute tour:** sign in → upload a document in **Library** and
 watch it reach `indexed` → ask about it in **Chat** and expand the agent's
@@ -150,35 +148,32 @@ Also in [docs/screenshots/](docs/screenshots/): the
 [library](docs/screenshots/library.png) with ingestion statuses and the
 [modern admin page](docs/screenshots/admin.png) that links the console.
 
-## Capabilities
+## Component map
 
-What the system demonstrates, mapped to where it lives in the codebase
-(ARCHITECTURE.md Section 2).
+Where each part of the system lives.
 
-| Capability | Where | How |
+| Area | Where | What |
 |---|---|---|
-| Full-stack frontend (React / Next.js / TypeScript) | `frontend/` | Next.js + React + TypeScript app: streaming chat, document library, knowledge-graph explorer, admin. HTML5 semantics + CSS3 via Tailwind, plus a Bootstrap-based legacy console. |
-| Polyglot backends (Node, Python/Flask, Java/Spring Boot) | `services/bff` (Node), `services/ingestion` + `services/agent` (Python/Flask), `services/retrieval` (Java/Spring Boot) | All three stacks used deliberately, each with a distinct responsibility (ARCHITECTURE.md Section 7). |
-| REST APIs, microservices, serverless | All `services/*`; `infra/terraform` | REST across every service with contract tests (Pact) between BFF and retrieval. Four-service microservice topology. Serverless ingestion trigger: S3 → Lambda → SQS — proven end to end on LocalStack (see status table). |
-| Relational + NoSQL data, Git, CI/CD, Docker, testing | Data layer + `infra/` + `.github/` + `azure-pipelines.yml` | Postgres (relational); MongoDB (NoSQL). Git with Conventional Commits. CI/CD in GitHub Actions (executed) and an Azure DevOps mirror (authored — see status table). Docker for every service. Test pyramid: unit, integration, contract, e2e, AI eval (Section 13). |
-| AI / GenAI / agentic on cloud | `services/agent`, `services/ingestion`, `packages/llm`, `infra/terraform` | RAG pipeline + bounded agentic tool-use loop with guardrails, tracing, and an eval harness. Provider-agnostic LLM layer (Ollama local, Bedrock, Anthropic API). AWS target authored in Terraform with Bedrock IAM — validated, not applied (see status table). |
-| OOP + design patterns | Throughout + `docs/adr/` | NestJS and Spring Boot are OOP + DI heavy. Patterns applied intentionally and named in code/ADRs: Adapter/Strategy (LLM providers), Repository, ports-and-adapters, CQRS-lite (write/read split), circuit-breaker-style degradation (graph fallback). Lint/format gates and the ADRs in `docs/adr/` enforce the discipline. |
-| Secure, reusable, responsive, maintainable | Cross-cutting; `packages/` | Controls per `docs/security.md`; shared `packages/llm` and contracts; responsive + accessible UI (axe-core gate in e2e); tests, typed contracts, ADRs. |
-| DevSecOps, GitOps, Kubernetes | `.github/`, `infra/k8s`, `infra/gitops` | DevSecOps pipeline: Semgrep, gitleaks, Trivy (fs + images), SBOM (Syft), cosign keyless signing, findings gate; CodeQL SAST live in CI (see status table). Kustomize base + dev/staging/prod overlays; Argo CD manifests + staging tag-bump automation; Kyverno signed-image admission policy. |
-| OpenSearch, Neo4j, Gradle | `services/retrieval`, data layer | OpenSearch hybrid (lexical + vector) retrieval; Neo4j knowledge graph with parameterized Cypher; Spring Boot service built with Gradle. |
-| Legacy / mixed-technology integration (JSP, jQuery, Bootstrap) | `services/retrieval/src/main/webapp/` | Server-rendered JSP console (jQuery AJAX + Bootstrap via WebJars) served by the Spring Boot service, linked from the modern admin page and labeled as a legacy tool integrated deliberately (ADR-0009). |
-
-If you're asking "show me where you did X," this table is the answer.
+| Frontend | `frontend/` | Next.js + React + TypeScript: streaming chat, document library, knowledge-graph explorer, admin. Tailwind, responsive, axe-core accessibility gate in e2e. |
+| Edge API | `services/bff` | NestJS: JWT auth, server-side tenant scoping, the RBAC upload gate, rate limiting, SSE fan-out to the browser. |
+| Write path | `services/ingestion` | Flask: parse → chunk → embed → index to OpenSearch, entity/relation extraction into Neo4j, raw content and chunks into MongoDB, Alembic migrations for Postgres. |
+| Read path | `services/retrieval` | Spring Boot on Gradle: hybrid BM25 + kNN retrieval with RRF, parameterized Cypher graph queries, graph-augmented context. |
+| Reason path | `services/agent` | Flask: bounded tool-use loop, four schema-validated tenant-scoped tools, citation validation, refusal on empty retrieval, run/step tracing, eval harness. |
+| Data | Postgres, MongoDB, OpenSearch, Neo4j | Relational registry and traces; document/chunk store; lexical + vector index; knowledge graph. Redis is provisioned but not yet wired (see status table). |
+| LLM layer | `packages/llm` | Provider interface with adapters for Ollama (local), Bedrock, and the Anthropic API — swapped by environment, not by code change. |
+| Shared contracts | `packages/contracts` | OpenAPI contracts plus the Pact file verified between BFF and retrieval, drift-checked in CI. |
+| Infrastructure | `infra/docker`, `infra/k8s`, `infra/gitops`, `infra/terraform` | Compose stack; Kustomize base + dev/staging/prod overlays with probes, limits, and network policies; Argo CD applications and Kyverno signed-image admission; Terraform for the AWS target and the LocalStack serverless root. |
+| CI/CD | `.github/`, `azure-pipelines.yml` | GitHub Actions runs lint, tests, contract drift, Terraform validate + Checkov, and the security pipeline: Semgrep, gitleaks, Trivy (fs + images), CodeQL, SBOM via Syft, cosign keyless signing, findings gate. An Azure DevOps mirror of the same stages is authored (see status table). |
+| Legacy console | `services/retrieval/src/main/webapp/` | Server-rendered JSP with jQuery AJAX and Bootstrap via WebJars, served by the Spring Boot service under HTTP Basic and linked from the modern admin page — mixed-technology integration done the way it actually shows up in enterprises (ADR-0009). |
 
 ## What runs live vs. what is authored + validated
 
-This section exists so the README stays accurate for someone who checks.
-Everything below is real code in this repository; the distinction is where
-it has actually executed.
+Everything below is real code in this repository; the distinction is where it
+has actually executed.
 
 | Area | Status |
 |---|---|
-| **Local stack** (`docker compose`) | **Runs live.** Eleven containers; every milestone's acceptance was demonstrated against this stack, including the Playwright e2e journeys. |
+| **Local stack** (`docker compose`) | **Runs live.** Eleven containers; the Playwright e2e journeys run against it. |
 | **CI (GitHub Actions)** | **Runs live** on every push: per-service lint + tests, contract-drift check, Terraform validate + Checkov. |
 | **Security scans: Semgrep, gitleaks, Trivy (fs + image), SBOM, cosign signing** | **Run live in CI and gate the pipeline on findings.** Semgrep (ERROR), gitleaks (any), and Trivy (HIGH/CRITICAL) are at zero and fail the build on regression; images are signed keyless to the Sigstore transparency log. Current alert triage lives in `docs/security-findings.md`. |
 | **CodeQL** | **Runs live in CI.** Activated when the repo went public (GHAS is free on public repos; ADR-0007) and analyzes all three languages with buildless extraction (`build-mode: none`) — java-kotlin included, since the nested Gradle project has no root build for autobuild. CodeQL **reports** to GitHub code scanning and does not gate the pipeline; see `docs/security-findings.md` for its alert triage. |
@@ -193,20 +188,20 @@ it has actually executed.
 
 ## Evaluation results
 
-Methodology in ARCHITECTURE.md Section 9.4; full results and caveats in
-[docs/eval.md](docs/eval.md). Latest clean run on the 10-query labeled set:
+Full results and caveats in [docs/eval.md](docs/eval.md). Latest clean run on
+the 10-query labeled set:
 
 - **Retrieval** (hybrid BM25 + kNN, RRF): **recall@5 = 1.0, MRR = 1.0** —
   on an easy, topically disjoint 4-document set; this proves the pipeline,
   not state-of-the-art retrieval quality.
 - **Generation** (agent loop, 5-query subset): citation coverage **0.47**
   and LLM-judged groundedness **0.0** on the final run, against **0.2 /
-  0.4** on the previous run — same code, same model. **These are
-  3B-model-on-CPU baseline numbers, and the spread is the point**: the small
-  model writes correct answers with inconsistent inline citations, and the
-  same-size self-judge is noisy enough to mark verifiably correct, fully
-  cited answers ungrounded (`docs/eval.md` records both runs and the
-  judge-noise analysis). The generator and judge are env-swappable
+  0.4** on the previous run — same code, same model. These are
+  3B-model-on-CPU baseline numbers, and the spread matters more than either
+  figure: the small model writes correct answers with inconsistent inline
+  citations, and the same-size self-judge is noisy enough to mark verifiably
+  correct, fully cited answers ungrounded (`docs/eval.md` records both runs
+  and the judge-noise analysis). The generator and judge are env-swappable
   (`CHAT_MODEL`, Bedrock/Anthropic adapters); track the trend, not the
   absolute value.
 
@@ -249,4 +244,4 @@ empty retrieval, PII filter hook.
 | `infra/docker` | Local compose stack |
 | `infra/terraform` | AWS stack + LocalStack serverless root |
 | `infra/k8s`, `infra/gitops` | Kustomize base/overlays, Kyverno policy, Argo CD apps |
-| `docs/` | ARCHITECTURE.md, ADRs 0001–0009, backlog, eval, security, runbook |
+| `docs/` | ARCHITECTURE.md, ADRs, backlog, eval, security, runbook |

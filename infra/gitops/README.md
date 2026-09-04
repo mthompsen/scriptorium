@@ -12,5 +12,5 @@ Argo CD `Application` manifests (ARCHITECTURE.md Section 14.4).
 Apply these to a cluster running Argo CD (`kubectl apply -f infra/gitops`).
 The signed-image admission policy is `infra/k8s/policy/`. Live Argo CD
 reconciliation awaits a persistent cluster (ADR-0007); the Kustomize sources
-Argo CD points at are validated against a real API server (kind) in M5.
+Argo CD points at are validated against a real API server (kind).
 

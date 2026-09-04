@@ -26,7 +26,7 @@ import org.springframework.test.web.servlet.MockMvc;
 /**
  * The security split of ADR-0009: the legacy console demands HTTP Basic,
  * while the internal REST API keeps working unauthenticated (and without
- * CSRF tokens) exactly as before M7.
+ * CSRF tokens) exactly as it did before the console existed.
  */
 @SpringBootTest
 @AutoConfigureMockMvc

@@ -1,4 +1,4 @@
-# M1 end-to-end smoke: login -> upload -> chat, against the local compose stack.
+# End-to-end smoke: login -> upload -> chat, against the local compose stack.
 # Usage: pwsh scripts/e2e-smoke.ps1
 $ErrorActionPreference = 'Stop'
 $base = 'http://localhost:3001/api/v1'

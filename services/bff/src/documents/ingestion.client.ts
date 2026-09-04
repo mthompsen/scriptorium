@@ -10,8 +10,8 @@ export interface IngestRequest {
 }
 
 /**
- * Internal client for the ingestion service. M1 calls it synchronously
- * (ADR-0003); M2 replaces this with the queue + transactional outbox.
+ * Internal client for the ingestion service, called synchronously
+ * (ADR-0003); the queue + transactional outbox will replace this.
  */
 @Injectable()
 export class IngestionClient {

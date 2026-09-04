@@ -10,7 +10,7 @@ from dataclasses import dataclass
 
 from ingestion_service.parsers import Block
 
-TARGET_TOKENS = 450  # inside the spec's ~400–800 window
+TARGET_TOKENS = 450  # inside the ~400–800 window in ARCHITECTURE.md Section 9.1
 MAX_TOKENS = 800
 
 

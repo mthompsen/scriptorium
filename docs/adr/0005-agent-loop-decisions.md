@@ -1,15 +1,15 @@
-# ADR-0005: M3 agent loop — streaming, tracing, graph stub, generation eval
+# ADR-0005: Agent loop — streaming, tracing, graph stub, generation eval
 
 - **Status:** Accepted
 - **Date:** 2026-07-13
 
 ## Context
 
-M3 (ARCHITECTURE.md Section 15) delivers the bounded tool-use loop with guardrails,
-token streaming, and full run tracing. The spec leaves open how streaming is
+The agentic layer delivers the bounded tool-use loop with guardrails, token
+streaming, and full run tracing. Four things are unsettled: how streaming is
 carried end to end, how a trace row links to the chat message that does not
 yet exist while the run executes, what `query_knowledge_graph` does before
-Neo4j has data (M4), and how far the M3 eval goes.
+Neo4j has any data, and how far the generation eval goes.
 
 ## Decision
 
@@ -26,9 +26,9 @@ Neo4j has data (M4), and how far the M3 eval goes.
    the `final` event arrives and then backfills `message_id` on the run.
    Both services already own Postgres access (Section 4 arrows).
 3. **Graph tool.** `query_knowledge_graph` ships as an explicit stub
-   returning empty results and a "knowledge graph arrives in M4" note — the
-   milestone text allows it, and a schema-stable stub means M4 swaps the
-   executor without touching the loop, the trace, or the UI.
+   returning empty results and a "knowledge graph not populated yet" note. A
+   schema-stable stub means the real executor can be swapped in later without
+   touching the loop, the trace, or the UI.
 4. **Budgets.** Step budget (`AGENT_MAX_STEPS`, default 6) and wall-clock
    budget (`AGENT_TIMEOUT_S`, default 240) are enforced by the loop; hitting
    either forces a grounded refusal, recorded as a `final` step with status
@@ -48,5 +48,5 @@ Neo4j has data (M4), and how far the M3 eval goes.
 Tool activity streams to the browser in real time, which is most of the
 perceived value at CPU inference speeds. The nullable `message_id` admits
 orphaned runs if the BFF dies between `final` and backfill — visible in the
-audit trail rather than hidden, which is acceptable. The graph tool stub
-keeps the M3 tool set at the spec's four without inventing M4 scope early.
+audit trail rather than hidden, which is acceptable. The graph tool stub keeps the
+tool set at four without pulling the graph work forward.

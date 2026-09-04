@@ -11,7 +11,7 @@ needed." The roles existed as data — seeded in Postgres (`roles`,
 `user_roles`) and carried as JWT claims — but nothing enforced them: every
 authenticated user had identical access within their tenant. A guard that
 gates nothing is scaffolding, so either RBAC gets enforced or the claim gets
-cut. This ADR records enforcing it, and the honest scope of that enforcement.
+cut. This ADR records enforcing it, and the exact scope of that enforcement.
 
 Section 11 names the four roles without defining per-role semantics, so a
 reading has to be chosen and stated.
@@ -19,8 +19,9 @@ reading has to be chosen and stated.
 ## Decision
 
 1. **Conventional role semantics.** owner ⊇ admin ⊇ member ⊇ viewer, with
-   **viewer = read-only**. Recorded here because the spec only names the
-   roles; this is an interpretation, not a spec quote.
+   **viewer = read-only**. Recorded here because Section 11 only names the
+   roles; this is an interpretation, not something the design document
+   states.
 
 2. **One coarse gate at the BFF: document upload.** `POST /documents` is
    restricted to owner/admin/member via `@Roles(...)` + `RolesGuard`; viewer

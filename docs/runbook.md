@@ -23,7 +23,7 @@ First start pulls the local models (~2.3 GB: `nomic-embed-text` +
 subsequent starts are instant. Answers run on CPU and can take up to a
 minute. `scripts/run-eval.ps1` reproduces the numbers in `docs/eval.md`.
 
-Graph extraction (M4) runs per chunk during ingestion on the local model and
+Graph extraction runs per chunk during ingestion on the local model and
 adds minutes per document on CPU; set `GRAPH_EXTRACTION=off` to skip it.
 The explorer lives at http://localhost:3000/graph; the Neo4j browser at
 http://localhost:7474 (neo4j / scriptorium-dev).
@@ -31,7 +31,7 @@ http://localhost:7474 (neo4j / scriptorium-dev).
 An end-to-end API smoke test lives at `scripts/e2e-smoke.ps1`
 (login → upload → status → chat → authz check).
 
-### Browser e2e (Playwright, M7)
+### Browser e2e (Playwright)
 
 The journey suite lives in `e2e/` and runs against the started compose
 stack (not in CI — ADR-0009):
@@ -47,7 +47,7 @@ graph explorer, legacy console (auth, JSP render, jQuery refresh), and an
 axe-core accessibility gate on every modern page. README screenshots can be
 regenerated with `SCREENSHOTS=1 npx playwright test tests/screenshots.spec.ts`.
 
-### Legacy admin console (M7)
+### Legacy admin console
 
 http://localhost:8080/legacy/admin/ — HTTP Basic, dev defaults
 `admin` / `scriptorium-dev` (`LEGACY_ADMIN_USER` / `LEGACY_ADMIN_PASSWORD`

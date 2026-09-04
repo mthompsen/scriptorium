@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/** Serves ordered chunk content for the agent's get_document tool (M3). */
+/** Serves ordered chunk content for the agent's get_document tool. */
 @RestController
 public class DocumentChunksController {
 

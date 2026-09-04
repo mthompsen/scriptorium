@@ -4,14 +4,13 @@ Methodology is defined in `docs/ARCHITECTURE.md` Section 9.4. The labeled set li
 in `services/agent/eval/` (4 fictional corporate documents, 10 queries each
 labeled with the document containing the answer). `scripts/run-eval.ps1`
 **resets the eval tenant's corpus**, uploads it fresh, waits for indexing,
-and calls the agent's `POST /eval/run`. Numbers below are pasted verbatim
-from a real run — never asserted by hand.
+and calls the agent's `POST /eval/run`. Numbers below are pasted verbatim from a real run.
 
 ## Results
 
 **Retrieval (clean harness, 10 queries, k=5)** — hybrid BM25 + kNN with RRF
 fusion, `nomic-embed-text` embeddings. Stable across every clean run,
-re-confirmed by the final M7 run (2026-07-14): every query at rank 1.
+re-confirmed by the most recent run: every query at rank 1.
 
 | Metric | Value |
 |---|---|
@@ -23,7 +22,7 @@ re-confirmed by the final M7 run (2026-07-14): every query at rank 1.
 | Run | Generator | Judge | Citation coverage | Groundedness |
 |---|---|---|---|---|
 | 2026-07-13 | `llama3.2:3b` (Ollama, CPU) | `llama3.2:3b` (self-judge) | **0.2** | **0.4** |
-| 2026-07-14 (final M7) | `llama3.2:3b` (Ollama, CPU) | `llama3.2:3b` (self-judge) | **0.4667** | **0.0** — see judge-noise note |
+| 2026-07-14 (latest) | `llama3.2:3b` (Ollama, CPU) | `llama3.2:3b` (self-judge) | **0.4667** | **0.0** — see judge-noise note |
 | 2026-07-13 | `qwen2.5:7b` (Ollama, CPU) | `llama3.2:3b` | *infeasible on this hardware* — see note | — |
 | not run | hosted API model (`LLM_PROVIDER=anthropic` or Bedrock) as generator/judge | independent local model | open improvement path — no API-model run recorded yet | — |
 
@@ -36,7 +35,7 @@ judge collapsed to zero. This is exactly why the caveats below say to track
 the trend and swap in an independent, stronger judge before trusting the
 groundedness number.
 
-**qwen2.5:7b infeasibility note (honest negative result):** on this CPU the
+**qwen2.5:7b infeasibility note (a negative result, recorded anyway):** on this CPU the
 7B model measured ~13 minutes per eval query through the loop (262s for the
 tool-decision call, ~4.5 min for synthesis, plus multi-minute model loads —
 a one-word warm-up prompt alone took 3m24s). Eval runs wall-clock-refused
@@ -45,11 +44,11 @@ rather than producing quality numbers; the one answer that completed under a
 not a model-quality result. The 3B row therefore stands as the local
 baseline.
 
-## Honest caveats
+## Caveats
 
 - **Retrieval is an easy set**: four short, topically disjoint documents.
   Perfect scores prove the pipeline, not retrieval quality; a harder set is
-  planned alongside the M4 graph work.
+  on the backlog.
 - **Eval hermeticity mattered**: before the harness reset corpus state,
   accumulated duplicate uploads pushed MRR as low as 0.27 — measuring
   contamination, not ranking. The runner now tears down and rebuilds the

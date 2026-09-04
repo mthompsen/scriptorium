@@ -1,4 +1,4 @@
-# Backing stores as StatefulSets with per-pod PVCs. In cloud mode (M6) the
+# Backing stores as StatefulSets with per-pod PVCs. In cloud mode the
 # relational + search tiers move to managed services via Terraform; these
 # in-cluster stores keep the K8s deployment self-contained for review.
 apiVersion: apps/v1

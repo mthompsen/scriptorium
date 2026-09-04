@@ -1,17 +1,16 @@
-# ADR-0006: M4 graph — extraction, augmentation, contract testing, drivers
+# ADR-0006: Knowledge graph — extraction, augmentation, contract testing, drivers
 
 - **Status:** Accepted
 - **Date:** 2026-07-14
 
 ## Context
 
-M4 (ARCHITECTURE.md Section 15) adds the knowledge graph: ingestion extracts
-entities/relations into Neo4j (Section 8.5's model), the Spring Boot service
-hosts graph queries, the frontend renders an explorer, and contract tests
-prove BFF↔retrieval interoperability. The spec leaves open the extraction
-mechanics, what "graph-augmented retrieval" concretely returns, how Pact
-artifacts move between the Node consumer and the JVM provider, and the
-Neo4j access style.
+The knowledge graph lands here: ingestion extracts entities/relations into
+Neo4j (Section 8.5's model), the Spring Boot service hosts graph queries, the
+frontend renders an explorer, and contract tests prove BFF↔retrieval
+interoperability. Open questions: the extraction mechanics, what
+"graph-augmented retrieval" concretely returns, how Pact artifacts move
+between the Node consumer and the JVM provider, and the Neo4j access style.
 
 ## Decision
 
@@ -29,7 +28,7 @@ Neo4j access style.
    `graph_context` array — for entities mentioned in the returned chunks,
    their strongest `RELATED_TO` neighbors. This gives the agent and callers
    entity-linked context that pure vector search misses (Section 7.3's
-   justification) without inventing an unrequested reranking stage.
+   justification) without adding a reranking stage nothing has asked for yet.
 3. **Pact without a broker**: the BFF's jest consumer tests generate the
    pact file into `packages/contracts/pacts/` (committed); the retrieval
    service verifies it in Gradle via pact-jvm against the running Spring app

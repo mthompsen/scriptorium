@@ -25,7 +25,7 @@ export class ChatService {
   }
 
   /**
-   * Streams the agent's answer (M3, ADR-0005): the user message is stored up
+   * Streams the agent's answer (ADR-0005): the user message is stored up
    * front, agent events are re-emitted to the caller, and the assistant
    * message is persisted (and linked to the trace) when the final event
    * arrives. The tenant scope is injected server-side — never client-supplied.

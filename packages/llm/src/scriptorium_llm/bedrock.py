@@ -1,5 +1,5 @@
 """AWS Bedrock adapter — the primary cloud target (R6). Requires the
-[bedrock] extra (boto3). Exercised end to end in M6; unit-tested now."""
+[bedrock] extra (boto3). Unit-tested; not exercised against live AWS."""
 
 import json
 from collections.abc import Iterator

@@ -12,11 +12,11 @@
 
 ## 0. How to read this document
 
-This is both the system's design document and its delivery plan. Sections 1–14 describe what the system is and why it is built this way. Section 15 is the phased roadmap: each milestone is a shippable increment with its own acceptance criteria, built strictly one milestone at a time.
+Sections 1–14 describe what the system is and why it is built this way. Section 15 is the roadmap it was built along, phase by phase.
 
-Where this document left a downstream decision unspecified, the choice most consistent with the stated design goals (Section 3) was taken and recorded as an ADR (Section 17) rather than scope being invented silently. The test and security gates in Sections 13 and 16 are treated as binding.
+Downstream decisions this document doesn't settle are resolved against the design goals in Section 3 and written up as ADRs (Section 17) rather than left implicit. The test and security gates in Section 13 are binding.
 
-Section 18 is a candid framing note worth reading: some of this system's breadth is a deliberate demonstration of range rather than what a lean production system would choose, and being able to say so is part of the point.
+Section 18 is a scope note on how wide the stack is and what I would cut first.
 
 ---
 
@@ -26,28 +26,26 @@ Scriptorium is a multi-tenant platform that ingests an organization's documents,
 
 The name follows the medieval scriptorium, the room where manuscripts were read, copied, indexed, and transmitted. The system is a modern one: it reads a corpus, indexes it, and transmits synthesized knowledge on request.
 
-Section 2 maps each capability the system demonstrates to a concrete part of the codebase, so a reviewer cloning the repository can trace it directly. The domain was chosen because enterprise RAG and agentic assistants are the actual deliverable that GenAI teams ship, so the project is real engineering rather than a tech demo.
+Section 2 maps each part of the system to where it lives in the codebase. Enterprise RAG and agentic assistants are what teams in this space actually ship, so the domain is a real engineering problem rather than a toy.
 
 ---
 
-## 2. Capability map
+## 2. Component map
 
-This is the spine of the project: every capability it demonstrates maps to a location in the codebase.
+Where each part of the system lives.
 
-| Capability | Where | How |
+| Area | Where | What |
 |---|---|---|
-| Full-stack frontend (React / Next.js / TypeScript) | `frontend/` | Next.js + React + TypeScript app: streaming chat, document library, knowledge-graph explorer, admin. HTML5 semantics + CSS3 via Tailwind, plus a Bootstrap-based legacy console (see the legacy-integration row). |
-| Polyglot backends (Node, Python/Flask, Java/Spring Boot) | `services/bff` (Node), `services/ingestion` + `services/agent` (Python/Flask), `services/retrieval` (Java/Spring Boot) | All three stacks used deliberately, each with a distinct responsibility. See Section 7. |
-| REST APIs, microservices, serverless | All `services/*`; `infra/terraform` | REST across every service with OpenAPI contracts (`packages/contracts`) and Pact contract tests. Four-service microservice topology. Serverless ingestion trigger: S3 → Lambda → SQS (trigger proven on LocalStack; no SQS consumer implemented yet — see §8.3 and the README status table). |
-| Relational + NoSQL data, Git, CI/CD, Docker, testing | Data layer + `infra/` + `.github/` + `azure-pipelines.yml` + `docs/backlog.md` | Postgres (relational); MongoDB (NoSQL — Redis is provisioned but not yet connected, see §8.3). Git with Conventional Commits. CI/CD in GitHub Actions and an Azure DevOps mirror. Docker for every service. Full test pyramid (Section 13). |
-| AI / GenAI / agentic on cloud | `services/agent`, `services/ingestion`, `packages/llm`, `infra/terraform` | RAG pipeline + agentic tool-use loop with guardrails, tracing, and an eval harness. Provider-agnostic LLM layer with adapters for Bedrock, Azure OpenAI, Vertex, and Ollama. Enterprise concerns: tenant isolation, RBAC, audit, guardrails. AWS target authored in Terraform with Bedrock IAM — validated, not applied. |
-| OOP + design patterns | Throughout + `docs/adr/` | NestJS and Spring Boot are OOP + dependency-injection heavy. Named patterns applied intentionally: Adapter/Strategy (LLM providers), Repository (data access), Hexagonal/ports-and-adapters (service internals), CQRS-lite (write vs read path split), Factory (tool construction). Linting, formatting, and ADRs enforce clean-code discipline. |
-| Secure, reusable, responsive, maintainable | Cross-cutting; `packages/` | Security controls per Section 12. Reuse via shared packages (`packages/llm`, `packages/contracts`). Responsive, accessible Tailwind UI. Maintainability via tests, ADRs, typed contracts, modular services. |
+| Frontend | `frontend/` | Next.js + React + TypeScript app: streaming chat, document library, knowledge-graph explorer, admin. HTML5 semantics + CSS3 via Tailwind, plus a Bootstrap-based legacy console (see the legacy-integration row). |
+| Backends | `services/bff` (Node), `services/ingestion` + `services/agent` (Python/Flask), `services/retrieval` (Java/Spring Boot) | Three stacks, each with a distinct responsibility. See Section 7. |
+| APIs and topology | All `services/*`; `infra/terraform` | REST across every service with OpenAPI contracts (`packages/contracts`) and Pact contract tests. Four-service topology. Serverless ingestion trigger: S3 → Lambda → SQS (trigger proven on LocalStack; no SQS consumer implemented yet — see §8.3 and the README status table). |
+| Data, build, and delivery | Data layer + `infra/` + `.github/` + `azure-pipelines.yml` + `docs/backlog.md` | Postgres (relational); MongoDB (document store — Redis is provisioned but not yet connected, see §8.3). Git with Conventional Commits. CI/CD in GitHub Actions and an Azure DevOps mirror. Docker for every service. Full test pyramid (Section 13). |
+| AI layer | `services/agent`, `services/ingestion`, `packages/llm`, `infra/terraform` | RAG pipeline + agentic tool-use loop with guardrails, tracing, and an eval harness. Provider-agnostic LLM layer with adapters for Bedrock, Azure OpenAI, Vertex, and Ollama. Enterprise concerns: tenant isolation, RBAC, audit, guardrails. AWS target authored in Terraform with Bedrock IAM — validated, not applied. |
+| Structure and patterns | Throughout + `docs/adr/` | NestJS and Spring Boot are OOP + dependency-injection heavy. Named patterns applied where they earn their keep: Adapter/Strategy (LLM providers), Repository (data access), Hexagonal/ports-and-adapters (service internals), CQRS-lite (write vs read path split), Factory (tool construction). Linting, formatting, and ADRs keep the discipline. |
+| Cross-cutting | Cross-cutting; `packages/` | Security controls per Section 12. Reuse via shared packages (`packages/llm`, `packages/contracts`). Responsive, accessible Tailwind UI. Maintainability via tests, ADRs, typed contracts, modular services. |
 | DevSecOps, GitOps, Kubernetes | `.github/`, `infra/k8s`, `infra/gitops` | DevSecOps pipeline: SAST (Semgrep + CodeQL), dependency scanning (Trivy + Dependabot), secret scanning (gitleaks), container scanning (Trivy), SBOM (Syft), image signing (cosign). GitOps via Argo CD. Kubernetes customization via Kustomize base + per-environment overlays. |
-| OpenSearch, Neo4j, Gradle | `services/retrieval`, data layer | OpenSearch for hybrid (lexical + vector) retrieval. Neo4j for the knowledge graph. Spring Boot service built with Gradle. |
-| Legacy / mixed-technology integration (JSP, jQuery, Bootstrap) | `services/retrieval/src/main/webapp/` | A server-rendered legacy admin console (JSP + jQuery + Bootstrap) served by the Spring Boot service, framed as a legacy tool integrated into the modern platform. Deliberately illustrates mixed-tech integration. |
-
-If a reviewer asks "show me where you did X," this table is the answer.
+| Search and graph | `services/retrieval`, data layer | OpenSearch for hybrid (lexical + vector) retrieval. Neo4j for the knowledge graph. Spring Boot service built with Gradle. |
+| Legacy / mixed-technology integration | `services/retrieval/src/main/webapp/` | A server-rendered legacy admin console (JSP + jQuery + Bootstrap) served by the Spring Boot service, framed as a legacy tool integrated into the modern platform — the shape mixed-tech integration actually takes in enterprises. |
 
 ---
 
@@ -55,11 +53,11 @@ If a reviewer asks "show me where you did X," this table is the answer.
 
 ### 3.1 Goals
 
-The system should be runnable end to end on a laptop with a single command, so that a reviewer can clone and see it work without a cloud account. It should also be deployable to a real cloud through infrastructure as code, so that the production story is demonstrable rather than hypothetical. Every component should be independently testable, and the whole should meet enterprise expectations around isolation, access control, auditability, and safety of the AI layer. The codebase should read as intentional: patterns chosen for reasons, decisions recorded, tests meaningful rather than coverage theater.
+The system should be runnable end to end on a laptop with a single command, without a cloud account. It should also be deployable to a real cloud through infrastructure as code, so the production path is concrete rather than hypothetical. Every component should be independently testable, and the whole should meet enterprise expectations around isolation, access control, auditability, and safety of the AI layer. The codebase should read as intentional: patterns chosen for reasons, decisions recorded, tests meaningful rather than coverage theater.
 
 ### 3.2 Non-goals
 
-Scriptorium is not trying to be a production SaaS with billing, SSO federation, or horizontal auto-scaling tuning. It is not trying to beat a hosted RAG product on retrieval quality. It does not need to support every document format on earth; PDF, DOCX, Markdown, HTML, and plain text are sufficient. It is not a real-time collaborative editor. Keep scope inside these lines unless a milestone explicitly expands them.
+Scriptorium is not trying to be a production SaaS with billing, SSO federation, or horizontal auto-scaling tuning. It is not trying to beat a hosted RAG product on retrieval quality. It does not need to support every document format on earth; PDF, DOCX, Markdown, HTML, and plain text are sufficient. It is not a real-time collaborative editor. Scope stays inside these lines unless there is a reason to move them.
 
 ---
 
@@ -162,7 +160,7 @@ Versions are the intended baseline; patch versions may be bumped when a security
 
 ## 6. Repository structure
 
-A monorepo. It keeps the whole system reviewable in one clone and keeps changes that cross service boundaries coherent. Plain directory layout; adopt Nx or Turborepo only if a milestone justifies it.
+A monorepo. It keeps the whole system reviewable in one clone and keeps changes that cross service boundaries coherent. Plain directory layout; Nx or Turborepo only if the build actually starts hurting.
 
 ```
 scriptorium/
@@ -205,13 +203,13 @@ scriptorium/
 
 ## 7. Service-by-service design
 
-Each service follows ports-and-adapters internally: a domain core with no framework imports, surrounded by adapters for HTTP, persistence, and external clients. This keeps the domain testable and is a concrete demonstration of clean architecture.
+Each service follows ports-and-adapters internally: a domain core with no framework imports, surrounded by adapters for HTTP, persistence, and external clients. This keeps the domain testable and the framework replaceable.
 
 ### 7.1 BFF / API Gateway — NestJS (Node/TS)
 
 **Responsibility.** The only public API. Authenticates requests (JWT), resolves tenant context, enforces coarse authorization, orchestrates internal service calls, aggregates responses, and streams agent output to the browser over Server-Sent Events. Owns nothing domain-heavy; it is the composition and edge-security layer.
 
-**Why Node/NestJS here.** SSE streaming and request fan-out are natural in Node's async model, and NestJS's module/provider/DI structure demonstrates OOP and design patterns cleanly. It is also the layer a frontend engineer touches most, reinforcing the full-stack story.
+**Why Node/NestJS here.** SSE streaming and request fan-out are natural in Node's async model, and NestJS's module/provider/DI structure keeps the edge layer organised as it grows. It is also the layer closest to the frontend, so sharing TypeScript types across the boundary is free.
 
 **Representative endpoints** (OpenAPI is the source of truth in `packages/contracts`):
 
@@ -248,7 +246,7 @@ Each service follows ports-and-adapters internally: a domain core with no framew
 
 **Responsibility.** The read path. Given a query and tenant scope, run hybrid retrieval (BM25 + kNN vector search) over OpenSearch, run targeted graph queries over Neo4j (entity neighborhoods, path queries), fuse and rerank results, and return an assembled, deduplicated context set with provenance. Also serves the **legacy admin console** (JSP + jQuery + Bootstrap) for corpus and tenant administration.
 
-**Why Java/Spring Boot here.** Enterprises frequently place search aggregation and heavy read services on the JVM; Spring Boot's layered architecture and DI demonstrate OOP at production scale, Gradle is a first-class build tool, and hosting server-rendered JSP is an honest legacy pattern rather than a contrived one.
+**Why Java/Spring Boot here.** Enterprises frequently place search aggregation and heavy read services on the JVM; Spring Boot's layered architecture and DI hold up well at that scale, Gradle is a first-class build tool, and the JVM is where the legacy console naturally belongs.
 
 **Representative endpoints.**
 
@@ -328,7 +326,7 @@ Schema-flexible payloads that do not belong in a relational schema: the raw extr
 
 ### 8.3 Redis — provisioned, not yet connected
 
-Redis runs in the compose stack and the Kubernetes manifests, but no service currently constructs a client. There is no cache or session code (authentication is stateless JWT in an HttpOnly cookie), and rate limiting is in-memory in the BFF (`@nestjs/throttler`), not Redis. Redis is kept as provisioned infrastructure for a future use — the natural one being shared rate-limit storage so per-IP limits hold across BFF replicas. Until it is wired, it does not satisfy the "at least one NoSQL" requirement; MongoDB (§8.2) does.
+Redis runs in the compose stack and the Kubernetes manifests, but no service currently constructs a client. There is no cache or session code (authentication is stateless JWT in an HttpOnly cookie), and rate limiting is in-memory in the BFF (`@nestjs/throttler`), not Redis. Redis is kept as provisioned infrastructure for a future use — the natural one being shared rate-limit storage so per-IP limits hold across BFF replicas. Until it is wired, MongoDB (§8.2) is the only non-relational store actually carrying data.
 
 ### 8.4 OpenSearch — hybrid retrieval
 
@@ -465,7 +463,7 @@ Example schema (`search_documents`):
 
 ### 9.3 LLM provider abstraction
 
-`packages/llm` defines a provider interface and adapters, an Adapter/Strategy demonstration and the mechanism satisfying "AWS, Azure, or GCP":
+`packages/llm` defines a provider interface and adapters — an Adapter/Strategy pair, and the seam that lets the same code run against a local model or any of the three major clouds:
 
 ```python
 class LLMProvider(Protocol):
@@ -508,7 +506,7 @@ Next.js App Router, React, TypeScript, Tailwind. Responsive and accessible (sema
 
 **State.** Server components for data fetching; a light client store (Zustand or React Query) for chat/session state and SSE handling.
 
-**Legacy console.** A separate, deliberately old-style admin surface served by the Spring Boot service using JSP + jQuery + Bootstrap, linked from the modern Admin page and clearly labeled as a legacy tool being integrated. This is honest mixed-technology integration, and the labeling is intentional so a reviewer understands the choice.
+**Legacy console.** A separate, deliberately old-style admin surface served by the Spring Boot service using JSP + jQuery + Bootstrap, linked from the modern Admin page and clearly labeled as a legacy tool being integrated. The label matters: it is there so nobody mistakes the console for the direction the frontend is heading.
 
 ---
 
@@ -561,7 +559,7 @@ A real pyramid, not coverage theater. Meaningful assertions over line count, tho
 | End-to-end | Critical user journeys | Playwright against the full docker-compose stack |
 | AI evaluation | Retrieval + generation quality | Custom harness (Section 9.4) |
 
-**Gates.** CI fails on: any failing test, coverage below the per-service floor (start at 70% on meaningful modules, not generated code), a broken contract, or a lint error. Contract tests are the star here: they prove the microservices actually interoperate, which is the hard part reviewers respect.
+**Gates.** CI fails on: any failing test, coverage below the per-service floor (start at 70% on meaningful modules, not generated code), a broken contract, or a lint error. Contract tests carry the most weight here: they prove the services actually interoperate, which unit tests on either side cannot.
 
 ---
 
@@ -569,7 +567,7 @@ A real pyramid, not coverage theater. Meaningful assertions over line count, tho
 
 ### 14.1 CI/CD
 
-Two equivalent pipelines to satisfy "Azure DevOps or similar" concretely: GitHub Actions as primary and an `azure-pipelines.yml` mirroring the same stages.
+Two equivalent pipelines: GitHub Actions as primary and an `azure-pipelines.yml` mirroring the same stages, so the build is not welded to one CI vendor.
 
 Pipeline stages:
 
@@ -599,11 +597,11 @@ flowchart LR
 
 ### 14.2 Containers and local mode
 
-Every service has a multi-stage Dockerfile (small, non-root images). `infra/docker/docker-compose.yml` brings up the entire system plus Postgres, Mongo, Redis, OpenSearch, Neo4j, and Ollama. `make up` should give a reviewer a working system on a laptop with no cloud account.
+Every service has a multi-stage Dockerfile (small, non-root images). `infra/docker/docker-compose.yml` brings up the entire system plus Postgres, Mongo, Redis, OpenSearch, Neo4j, and Ollama. `make up` gives a working system on a laptop with no cloud account.
 
 ### 14.3 Kubernetes (customization)
 
-Kustomize `base/` with per-environment `overlays/{dev,staging,prod}/` that patch replicas, resources, and config. Overlay-based customization is the concrete demonstration of "Kubernetes customization." Health/readiness probes, resource limits, and network policies on every workload.
+Kustomize `base/` with per-environment `overlays/{dev,staging,prod}/` that patch replicas, resources, and config. Overlays keep environment differences to a diff rather than a fork. Health/readiness probes, resource limits, and network policies on every workload.
 
 ### 14.4 GitOps
 
@@ -611,43 +609,40 @@ Argo CD `Application` manifests in `infra/gitops/`. Merges to main update image 
 
 ### 14.5 Cloud
 
-`infra/terraform/` provisions the AWS target: VPC, EKS, RDS Postgres, OpenSearch, S3, SQS, Lambda (the serverless ingestion trigger), IAM, and Bedrock access. The serverless piece is real: an S3 upload fires a Lambda that enqueues to SQS, which the ingestion service consumes, satisfying the serverless requirement as event-driven architecture. The stack is designed to be `terraform apply`-able and `terraform destroy`-able so it demonstrates the cloud story without needing to stay running and billing.
+`infra/terraform/` provisions the AWS target: VPC, EKS, RDS Postgres, OpenSearch, S3, SQS, Lambda (the serverless ingestion trigger), IAM, and Bedrock access. The serverless piece is real: an S3 upload fires a Lambda that enqueues to SQS, which the ingestion service consumes — event-driven ingestion rather than a polling loop. The stack is deliberately `terraform apply`-able and `terraform destroy`-able so it can be stood up, exercised, and torn down without staying up and billing.
 
 ---
 
-## 15. Delivery plan
+## 15. Roadmap
 
-This is the Agile artifact and the execution plan. Each milestone is a shippable increment with its own demo and acceptance criteria, delivered one at a time — no milestone was started until the previous one's acceptance criteria passed. The same breakdown is mirrored as epics and stories in `docs/backlog.md` with a board (GitHub Projects or Azure Boards).
+The system was built in phases, each one a working increment rather than a
+layer of half-finished scaffolding. The same breakdown is tracked as epics and
+stories in `docs/backlog.md`.
 
-**M0 — Scaffolding.** Monorepo, all directories, Makefile, docker-compose skeleton, empty services that boot with `/health`, this document committed as `docs/ARCHITECTURE.md`, ADR-0001, CI running lint + a trivial test.
-*Done when:* `make up` starts every container and all `/health` endpoints return 200; CI is green. *Unlocks:* the Docker/Git/CI foundation.
+**Scaffolding.** Monorepo, all directories, Makefile, docker-compose skeleton, empty services that boot with `/health`, this document, ADR-0001, CI running lint + a trivial test. The point of the phase is that `make up` starts every container and every `/health` returns 200 before anything real is written.
 
-**M1 — Walking skeleton.** Auth (JWT) in the BFF; Postgres schema + migrations; a document upload that stores a file and creates a `documents` row; a stub chat endpoint that echoes; minimal Next.js shell with login and chat pages.
-*Done when:* a user can log in, upload a document, and send a message end to end (even if the answer is a stub). *Unlocks:* the frontend shell, the Node edge, and the relational layer.
+**Walking skeleton.** Auth (JWT) in the BFF; Postgres schema + migrations; a document upload that stores a file and creates a `documents` row; a stub chat endpoint that echoes; minimal Next.js shell with login and chat pages. End to end from login through upload to a message, even with a stubbed answer.
 
-**M2 — RAG core.** Real ingestion pipeline (parse, chunk, embed, index to OpenSearch, store chunks in Mongo); retrieval service with hybrid search; chat that actually answers from retrieved context with citations; LLM layer with Ollama (local) and Bedrock adapters.
-*Done when:* asking a question about an uploaded document returns a grounded, cited answer; retrieval eval produces a recall@k number in `docs/eval.md`. *Unlocks:* the RAG core — OpenSearch retrieval, the Python services, the NoSQL store.
+**RAG core.** Real ingestion pipeline (parse, chunk, embed, index to OpenSearch, store chunks in Mongo); retrieval service with hybrid search; chat that answers from retrieved context with citations; LLM layer with Ollama (local) and Bedrock adapters. Asking about an uploaded document returns a grounded, cited answer, and the retrieval eval produces a recall@k number in `docs/eval.md`.
 
-**M3 — Agentic layer.** Agent orchestrator with the tool-use loop, tool set, guardrails, streaming, and full run/step tracing to Postgres; graph explorer wired once M4 lands (or stubbed).
-*Done when:* the agent demonstrably calls tools, streams tokens, cites sources, refuses ungrounded answers, and every run is traced. *Unlocks:* the agentic layer, the differentiating feature.
+**Agentic layer.** Agent orchestrator with the tool-use loop, tool set, guardrails, streaming, and full run/step tracing to Postgres. The agent calls tools, streams tokens, cites sources, refuses ungrounded answers, and every run is traced. The graph tool ships as a schema-stable stub until the graph exists.
 
-**M4 — Polyglot + graph.** Spring Boot retrieval service built with Gradle, hosting graph queries against Neo4j; ingestion extracts entities/relations into Neo4j; frontend graph explorer renders it; contract tests between BFF and retrieval.
-*Done when:* graph-augmented retrieval works, the graph explorer renders a real graph, and contract tests pass. *Unlocks:* the Java/Spring Boot service, Neo4j + Gradle, and contract-verified microservices.
+**Polyglot + graph.** Spring Boot retrieval service built with Gradle, hosting graph queries against Neo4j; ingestion extracts entities/relations into Neo4j; frontend graph explorer renders it; contract tests between BFF and retrieval, so the two are provably compatible rather than assumed to be.
 
-**M5 — DevSecOps + Kubernetes + GitOps.** Full security pipeline (Section 16), Kustomize base + overlays, Argo CD manifests, cosign signing, SBOMs, the `azure-pipelines.yml` mirror.
-*Done when:* the pipeline runs all scans and gates on findings; `kubectl apply -k overlays/dev` deploys the system; Argo CD reconciles from Git; both CI pipelines are green. *Unlocks:* DevSecOps, GitOps, Kubernetes customization, and the Azure DevOps mirror.
+**DevSecOps + Kubernetes + GitOps.** The security pipeline with its findings gate (Section 12), Kustomize base + overlays, Argo CD manifests, cosign signing, SBOMs, and the `azure-pipelines.yml` mirror. The gate has to fail the build on real findings, and `kubectl apply -k overlays/dev` has to deploy the system.
 
-**M6 — Cloud + serverless.** Terraform for the AWS target; the S3 → Lambda → SQS → ingestion event path; Bedrock as the deployed LLM provider.
-*Done when:* `terraform plan` is clean, the serverless ingestion path works against the provisioned resources (or LocalStack for a costless proof), and the runbook documents apply/destroy. *Unlocks:* the cloud deploy target and the serverless path.
+**Cloud + serverless.** Terraform for the AWS target; the S3 → Lambda → SQS → ingestion event path; Bedrock as the deployed LLM provider. The serverless path is exercised against LocalStack for a costless proof; the managed tiers are validated but not applied (ADR-0008).
 
-**M7 — Legacy console + hardening + polish.** JSP + jQuery + Bootstrap legacy admin console in the Spring Boot service; accessibility and responsive passes on the frontend; Playwright e2e for the critical journeys; final eval run; README with architecture diagram, screenshots, and the capability table from Section 2.
-*Done when:* the legacy console works and is linked from admin, e2e passes, and the README lets a stranger clone, run, and understand the system in ten minutes. *Unlocks:* the legacy-console integration, the hardening/polish pass, and the reviewer experience.
+**Legacy console + hardening + polish.** JSP + jQuery + Bootstrap legacy admin console in the Spring Boot service; accessibility and responsive passes on the frontend; Playwright e2e for the critical journeys; a final eval run; the README. The bar for the last phase is that a stranger can clone the repo, run it, and understand the system in ten minutes.
 
 ---
 
-## 16. Definition of Done (global)
+## 16. When a change is finished
 
-A unit of work is done only when: it has meaningful automated tests that pass; coverage stays above the floor; lint and format checks pass; all security scans pass the findings gate; the code runs inside `make up`; public behavior is documented; and any non-obvious decision is captured as an ADR. A milestone is done only when every item in its acceptance criteria is demonstrably true, not merely coded.
+A change is finished when it has meaningful automated tests that pass,
+coverage stays above the floor, lint and format checks pass, the security
+scans clear the findings gate, the code runs inside `make up`, public
+behavior is documented, and any non-obvious decision is written up as an ADR.
 
 ---
 
@@ -657,10 +652,27 @@ ADRs follow `docs/adr/0000-template.md` (title, status, context, decision, conse
 
 ---
 
-## 18. Appendix B — Scope and honesty note
+## 18. Appendix B — Scope note
 
-This system is deliberately broad. A lean greenfield product that needed exactly this domain would not reach for Node and Python and Java, plus Postgres and Mongo and Redis, plus OpenSearch and Neo4j, all at once. That polyglot, poly-store breadth exists to demonstrate range across a wide stack. In production the right move is to consolidate: likely one or two languages, drop a redundant datastore, and justify every remaining piece by load rather than by breadth.
+This system is wide. A lean greenfield product in exactly this domain would
+not reach for Node and Python and Java, plus Postgres and Mongo and Redis,
+plus OpenSearch and Neo4j, all at once. The breadth is here because the
+project is also a place to work across a wide stack, and that is a different
+optimisation target from shipping the narrowest thing that solves the
+problem.
 
-The value is in being able to articulate that tradeoff rather than defend the choice as optimal — the honest position is "this was built to demonstrate breadth across a wide stack, and here is precisely what I would cut in production and why." The legacy JSP console is labeled as legacy for the same reason: it is an honest demonstration of mixed-technology integration, not a claim that server-rendered JSP is the right default in 2026.
+What I would cut first, in order: consolidate to one or two languages — the
+ingestion and agent services have no good reason not to be a single Python
+service, and hybrid search could live there too if the JVM were not already
+carrying the legacy console; drop Redis until something actually needs it;
+and fold the knowledge graph away unless entity-linked retrieval measurably
+beats plain hybrid search on a real corpus. Everything remaining should
+justify itself by load, not by breadth.
 
-Everything else in this document is meant seriously. The architecture is coherent, the write/read/reason split is real, the security and evaluation stories are genuine engineering rather than decoration, and each datastore holds data suited to its model. It is built to the Definition of Done, stays runnable, and the capability map in Section 2 is left to do the talking.
+The legacy JSP console is labeled as legacy for a related reason: it is there
+because mixed-technology integration is a real and common problem, not
+because server-rendered JSP is a sensible default in 2026.
+
+The rest of this document is meant seriously. The write/read/reason split is
+real, the security and evaluation work is engineering rather than decoration,
+and each datastore holds data suited to its model.

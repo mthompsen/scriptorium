@@ -1,9 +1,9 @@
 # Security — threat model and control list
 
-Scope and intent are defined in `docs/ARCHITECTURE.md` Section 12. This document
-grows with the system; the full threat model and DevSecOps pipeline land in M5.
+Scope and intent are defined in `docs/ARCHITECTURE.md` Section 12. This
+document grows with the system.
 
-## Controls in place (M5) — DevSecOps pipeline
+## DevSecOps pipeline
 
 - SAST: Semgrep (`p/default` community + custom `.semgrep.yml` rules —
   parameterized-Cypher-only, no-tenant-from-request-body); CodeQL runs live
@@ -22,7 +22,7 @@ grows with the system; the full threat model and DevSecOps pipeline land in M5.
 - Note: retrieval runs Spring Boot 3.5.16 (minor bump from the Section 5
   baseline of 3.4.x), taken to clear Tomcat/Netty/Jackson CVEs.
 
-## Controls in place (M4) — graph layer
+## Graph layer
 
 - All Cypher is parameterized with explicit `tenant_id` parameters on both
   the Python (ingestion) and Java (retrieval) sides — no string-built
@@ -32,7 +32,7 @@ grows with the system; the full threat model and DevSecOps pipeline land in M5.
 - Graph outages degrade retrieval to hybrid-only with an explicit mode flag
   rather than failing (Section 11).
 
-## Controls in place (M3) — GenAI guardrails (Section 9.2)
+## GenAI guardrails (Section 9.2)
 
 - Bounded agent loop: hard step budget (`AGENT_MAX_STEPS`) and wall-clock
   timeout (`AGENT_TIMEOUT_S`); breaching either forces a refusal recorded as
@@ -53,7 +53,7 @@ grows with the system; the full threat model and DevSecOps pipeline land in M5.
 - Observability: every run and step traced to `agent_runs`/`agent_steps`
   with token counts and latency (Section 9.5).
 
-## Controls in place (M1)
+## Identity, tenancy, and the edge
 
 - AuthN: JWT issued by the BFF (30-min expiry), bcrypt password hashes.
   Browser flow uses an HttpOnly SameSite=Lax cookie; API clients use
@@ -71,19 +71,10 @@ grows with the system; the full threat model and DevSecOps pipeline land in M5.
 - Upload limits: 20 MB request cap; MIME allowlist (PDF, DOCX, MD, HTML, txt).
 - CORS restricted to the frontend origin with credentials.
 
-## Controls in place (M0)
+## Platform baseline
 
 - Secrets: no secrets in code; local config via environment with committed
   `.env.example` defaults only (dev-only credentials, clearly labeled).
 - Containers: every service image is multi-stage and runs as a non-root user.
-- Line of defense placeholders: `.semgrep.yml` and `.gitleaks.toml` exist at
-  the root; the scanning gate is wired into CI in M5.
-
-## Planned (per milestone)
-
-- M1: JWT auth, server-side tenant scoping, DTO/schema validation at the edge.
-- M3: GenAI guardrails — tool allowlist, prompt-injection handling, citation
-  validation, step/time budgets (Section 9.2).
-- M5: SAST (Semgrep, CodeQL), dependency + container scanning (Trivy),
-  secret scanning (gitleaks), SBOM (Syft), image signing (cosign), findings
-  gate failing the pipeline on high severity.
+- `.semgrep.yml` and `.gitleaks.toml` live at the repository root and are
+  wired into both CI and the pre-commit hook.

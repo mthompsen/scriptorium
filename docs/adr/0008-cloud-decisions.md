@@ -1,17 +1,17 @@
-# ADR-0008: M6 cloud — Terraform structure, LocalStack proof, no live apply
+# ADR-0008: Cloud — Terraform structure, LocalStack proof, no live apply
 
 - **Status:** Accepted
 - **Date:** 2026-07-14
 
 ## Context
 
-M6 (ARCHITECTURE.md Sections 14.5, 15) provisions the AWS target — VPC, EKS, RDS
-Postgres, OpenSearch, S3, SQS, Lambda, IAM, Bedrock access — with the
-serverless ingestion path (S3 → Lambda → SQS → ingestion worker) as the primary
-deliverable. The standing constraint for this milestone: author and validate
-the infrastructure, but **do not run `terraform apply` against real AWS or
-provision billable resources** without explicit approval and a cost estimate.
-The spec itself anticipates this — "or LocalStack for a costless proof."
+The AWS target — VPC, EKS, RDS Postgres, OpenSearch, S3, SQS, Lambda, IAM,
+Bedrock access (ARCHITECTURE.md Section 14.5) — with the serverless ingestion
+path (S3 → Lambda → SQS → ingestion worker) as the primary deliverable. The
+constraint throughout: author and validate the infrastructure, but **do not
+run `terraform apply` against real AWS or provision billable resources**
+without an explicit decision and a cost estimate. LocalStack gives a costless
+proof of the part that matters most.
 
 ## Decision
 
@@ -28,7 +28,7 @@ The spec itself anticipates this — "or LocalStack for a costless proof."
    the real Lambda enqueuing a real SQS message — while the managed tiers are
    validated statically.
 
-2. **Validation tiers, stated honestly.**
+2. **Validation tiers.**
    - `terraform fmt -check`, `terraform validate`, and a Checkov security
      scan run over the **entire** stack (no AWS creds needed).
    - `terraform plan` and `apply` run against **LocalStack** for the
@@ -45,8 +45,8 @@ The spec itself anticipates this — "or LocalStack for a costless proof."
 
 4. **Bedrock** is access-not-provisioning: an IAM policy granting
    `bedrock:InvokeModel` on the Titan-embeddings and Claude model ARNs, which
-   the EKS pods assume via IRSA. The `packages/llm` Bedrock adapter (M2)
-   already speaks this API; M6 only wires the permission.
+   the EKS pods assume via IRSA. The `packages/llm` Bedrock adapter already
+   speaks this API; the Terraform only wires the permission.
 
 ## Consequences
 

@@ -8,7 +8,7 @@ import {
 } from './helpers';
 
 /**
- * Legacy console journey (Section 15 M7, RP5): linked from the modern admin
+ * Legacy console journey: linked from the modern admin
  * page, guarded by HTTP Basic, server-rendered JSP with a jQuery-driven
  * refresh and corpus drill-down.
  */

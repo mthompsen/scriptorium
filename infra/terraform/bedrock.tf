@@ -1,6 +1,6 @@
 # Bedrock is access, not provisioning (ADR-0008): an IRSA role the agent and
 # ingestion pods assume to invoke the allowed models. The packages/llm
-# Bedrock adapter (M2) already speaks this API.
+# Bedrock adapter already speaks this API.
 data "aws_iam_policy_document" "bedrock_invoke" {
   statement {
     effect  = "Allow"

@@ -10,7 +10,7 @@ schema and explicitly leaves the choice open: "Flyway for the JVM service's
 schema, or a single migration owner such as Alembic driven from ingestion;
 pick one owner and record it in an ADR." Multiple services touch Postgres
 (BFF for identity/chat, ingestion for the document registry, agent for run
-traces from M3), so split ownership would invite drift.
+traces), so split ownership would invite drift.
 
 ## Decision
 
@@ -22,13 +22,13 @@ the same command runs in cloud deploys. No other service may alter schema.
 Rationale: the ingestion service is the write path and the natural owner of
 the system of record (Section 4); Python/Alembic keeps migrations executable
 in laptop mode without a JVM; and the retrieval service — the Flyway
-alternative — does not exist as a real service until M2/M4, while the schema
-is needed in M1.
+alternative — is not yet carrying real responsibility at the point the schema
+is first needed.
 
 ## Consequences
 
 Schema changes always ship as ingestion-service commits, even when motivated
-by BFF or agent features; reviewers look in one place for schema history. The
+by BFF or agent features, which keeps schema history in one place. The
 BFF consumes the schema without owning it, so its integration tests rely on
 migrations having run (compose orders this via `depends_on`). If the JVM
 service later needs schema it exclusively owns, that would be a new ADR.

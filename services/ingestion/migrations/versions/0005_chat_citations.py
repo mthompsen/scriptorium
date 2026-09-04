@@ -1,4 +1,4 @@
-"""chat messages carry citations (M2, ADR-0004; Section 8.1 allows extension)
+"""chat messages carry citations (ADR-0004; Section 8.1 allows extension)
 
 Revision ID: 0005
 Revises: 0004
